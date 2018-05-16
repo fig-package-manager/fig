@@ -41,7 +41,7 @@ def main()
   fig_gemspec = Gem::Specification.new do |gemspec|
     gemspec.name        = 'fig'
     gemspec.email       = 'git@foemmel.com'
-    gemspec.homepage    = 'http://github.com/mfoemmel/fig'
+    gemspec.homepage    = 'http://github.com/fig-package-manager/fig'
     gemspec.authors     = ['Matthew Foemmel']
     gemspec.platform    = Gem::Platform::RUBY
     gemspec.version     = get_version

@@ -141,8 +141,9 @@ v1.23.0 - 2015/1/2
   - Upgraded dependencies.
   - A rudimentary Vim plugin has been added to the repository with syntax
     highlighting of comments and keywords.  See
-    https://github.com/mfoemmel/fig/blob/master/support/vim/README.md for more.
-    Those with better VimL knowledge encouraged to submit improvements.
+    https://github.com/fig-package-manager/fig/blob/master/support/vim/README.md
+    for more.  Those with better VimL knowledge encouraged to submit
+    improvements.
 
 v1.22.1.beta.1 - 2014/12/17
 
@@ -795,9 +796,9 @@ v0.2.1 - 2012/11/5
       Grammar v1 is required because the set statement (--set option) contains a comment ("#") character.
 
     Documentation for the new grammar is available at
-    https://github.com/mfoemmel/fig/wiki/v1-grammar.  It may be helpful to have
-    a look at the old one, as well:
-    https://github.com/mfoemmel/fig/wiki/v0-grammar
+    https://github.com/fig-package-manager/fig/wiki/v1-grammar.  It may be
+    helpful to have a look at the old one, as well:
+    https://github.com/fig-package-manager/fig/wiki/v0-grammar
 
   Miscellaneous:
 
@@ -1301,7 +1302,8 @@ v0.1.64 - 2012/5/21
     messages and fewer stack traces.
 
   - README.md has had most of its content ripped out.  Documentation has been
-    greatly expanded and is available at https://github.com/mfoemmel/fig/wiki.
+    greatly expanded and is available at
+    https://github.com/fig-package-manager/fig/wiki.
 
   - Includes the Fig version in the comments in published .fig files.
 

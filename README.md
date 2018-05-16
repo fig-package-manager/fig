@@ -1,10 +1,9 @@
-Description
-===========
+# Description
 
 Fig is a utility for configuring environments and managing dependencies across
 a team of developers.
 
-An "environment" in fig is a set of environment variables.  A "package" is a
+An "environment" in Fig is a set of environment variables.  A "package" is a
 collection of files, along with some metadata describing which environment
 variables should be modified when the package is included.  For instance, each
 dependency may prepend its corresponding jar to CLASSPATH.  The metadata may
@@ -27,25 +26,21 @@ install them in the fig-home as needed.  Fig does not contact the remote
 repository unless it needs to.  The default fig-home is `$HOME/.fighome`, but
 may be changed by setting the `$FIG_HOME` environment variable.
 
-Full documentation
-==================
+# Full documentation
 
-https://github.com/mfoemmel/fig/wiki
+https://github.com/fig-package-manager/fig/wiki
 
-Community
-=========
+# Community
 
 \#fig on irc.freenode.net
 
 [Fig Mailing List](http://groups.google.com/group/fig-user)
 
-Extensions for other tools
-==========================
+# Extensions for other tools
 
 These live in the `support` directory within the repository.  For example,
 there's a Vim plugin in `support/vim`.
 
-Copyright
-=========
+# Copyright
 
-Copyright (c) 2009-2015 Matthew Foemmel. See LICENSE for details.
+Copyright ©2009-2018 Matthew Foemmel. See LICENSE for details.
