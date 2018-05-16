@@ -4,12 +4,15 @@ v1.27.3 - xxxx/xx/xx
 
   - Fix crash when attempting to use --source-package without also specifying
     --update or --update-if-missing.  Thanks to Matt Godbolt for the report.
+  - Fix for publishing from Windows; _stat() chokes on directories when the
+    path contains a trailing slash.  Patch by Andrey Zdanovich.
   - Fix for warning message emitted when a retrieve path gets changed.  Patch
     by Gabriel Burca.
 
   Miscellaneous:
 
   - Line number is included in error messages when parsing local metadata.
+  - Home of all things Fig moved to https://github.com/fig-package-manager/fig.
 
 v1.27.2 - 2016/10/20
 

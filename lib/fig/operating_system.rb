@@ -279,7 +279,7 @@ class Fig::OperatingSystem
   def add_path_to_archive(path, archive_writer)
     children = []
     archive_writer.new_entry do |entry|
-      entry.copy_lstat(path)
+      entry.copy_lstat(path.chomp '/') # chomp required on Windows
       entry.pathname = path
       if entry.symbolic_link?
         linked = File.readlink(path)
