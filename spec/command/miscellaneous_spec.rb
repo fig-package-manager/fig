@@ -23,7 +23,7 @@ describe 'Fig' do
   describe '--file' do
     it 'reads from the value' do
       dot_fig_file = "#{FIG_SPEC_BASE_DIRECTORY}/file-option-test.fig"
-      write_file(dot_fig_file, <<-END)
+      IO.write(dot_fig_file, <<-END)
         config default
           set FOO=BAR
         end
@@ -48,7 +48,7 @@ describe 'Fig' do
 
     it "ignores #{file_name} with the --no-file option" do
       dot_fig_file = "#{FIG_SPEC_BASE_DIRECTORY}/#{file_name}"
-      write_file(dot_fig_file, <<-END)
+      IO.write(dot_fig_file, <<-END)
         config default
           set FOO=BAR
         end

@@ -68,7 +68,7 @@ describe 'Fig' do
       end
 
       it "complains when globbing for archives picks up a file with the same as the resources tarball" do
-        write_file(
+        IO.write(
           "#{CURRENT_DIRECTORY}/#{Fig::Repository::RESOURCES_FILE}", ''
         )
 
@@ -321,7 +321,7 @@ describe 'Fig' do
       end
 
       it 'refuses to publish with --file and an environment variable option' do
-        write_file("#{CURRENT_DIRECTORY}/example.fig", '')
+        IO.write("#{CURRENT_DIRECTORY}/example.fig", '')
 
         out, err, exit_code =
           fig(
@@ -337,7 +337,7 @@ describe 'Fig' do
 
       it %q<--publish-local cleans up after prior local publishes of the same package version> do
         a_file_unpublished = "#{CURRENT_DIRECTORY}/a-file.txt"
-        write_file(a_file_unpublished, '')
+        IO.write(a_file_unpublished, '')
 
         input = <<-END
           resource a-file.txt
@@ -353,7 +353,7 @@ describe 'Fig' do
         File.unlink a_file_unpublished
 
         another_file_unpublished = "#{CURRENT_DIRECTORY}/another-file.txt"
-        write_file(another_file_unpublished, '')
+        IO.write(another_file_unpublished, '')
 
         input = <<-END
           resource another-file.txt
@@ -371,7 +371,7 @@ describe 'Fig' do
 
       describe 'with both a package.fig file in the current directory and an environment variable option' do
         before(:each) do
-          write_file(
+          IO.write(
             "#{CURRENT_DIRECTORY}/#{Fig::Command::PackageLoader::DEFAULT_PACKAGE_FILE}",
             <<-END_PACKAGE_DOT_FIG
               config default
@@ -424,7 +424,7 @@ describe 'Fig' do
       it 'includes the publish comment specified in a file' do
         file = "#{CURRENT_DIRECTORY}/comment.txt"
         comment = "\n  not indented  \t\n\n    indented\n\nnot indented  \n\n"
-        write_file(file, comment)
+        IO.write(file, comment)
 
         fig(
           [
@@ -448,7 +448,7 @@ describe 'Fig' do
 
       it 'includes the publish comment specified in a file and on the command-line' do
         file = "#{CURRENT_DIRECTORY}/comment.txt"
-        write_file(file, "«comment from file»")
+        IO.write(file, "«comment from file»")
 
         fig(
           [

@@ -17,7 +17,7 @@ def test_published_asset_with_url_with_symbol(
     "#{quote}file://#{CURRENT_DIRECTORY}/#{escaped_file}#{quote}"
 
   it %Q<with URL «#{quoted_url}» (contains a «#{symbol}»)> do
-    write_file "#{CURRENT_DIRECTORY}/#{file_name}", ''
+    IO.write "#{CURRENT_DIRECTORY}/#{file_name}", ''
 
     yield quoted_url
 
@@ -89,7 +89,7 @@ def test_published_asset_with_file_with_symbol(
   quoted_name = "#{quote}#{file_name}#{quote}"
 
   it %Q<with file «#{quoted_name}»> do
-    write_file "#{CURRENT_DIRECTORY}/#{file_name}", ''
+    IO.write "#{CURRENT_DIRECTORY}/#{file_name}", ''
 
     yield quoted_name
 
@@ -179,7 +179,7 @@ describe 'Fig' do
           value = "#{quote}nothing-special.zip#{quote}"
 
           it %Q<with file «#{value}»> do
-            write_file "#{CURRENT_DIRECTORY}/nothing-special.zip", ''
+            IO.write "#{CURRENT_DIRECTORY}/nothing-special.zip", ''
 
             fig(
               [%w< --publish foo/1.2.3 --set x=y >, "--#{asset_type}", value],
@@ -262,7 +262,7 @@ describe 'Fig' do
           value = "#{quote}nothing-special.zip#{quote}"
 
           it %Q<with file «#{value}»> do
-            write_file "#{CURRENT_DIRECTORY}/nothing-special.zip", ''
+            IO.write "#{CURRENT_DIRECTORY}/nothing-special.zip", ''
 
             input = <<-"END"
               grammar v1

@@ -82,7 +82,7 @@ describe 'WorkingDirectoryMaintainer' do
     FileUtils.mkdir_p("#{working_directory}/.fig")
 
     metadata_file = "#{working_directory}/.fig/retrieve"
-    write_file(metadata_file, 'random garbage')
+    IO.write(metadata_file, 'random garbage')
 
     expect {
       Fig::WorkingDirectoryMaintainer.new(working_directory)
@@ -92,6 +92,6 @@ describe 'WorkingDirectoryMaintainer' do
     # this process, we cannot delete that file, i.e. "File.rm(metadata_file)"
     # results in an EACCESS on Windows.  So, in lieu of removing the file, we
     # just make it empty.
-    write_file(metadata_file, '')
+    IO.write(metadata_file, '')
   end
 end

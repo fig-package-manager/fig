@@ -34,7 +34,7 @@ describe 'Fig' do
 
         describe %q<there is a package.fig file> do
           it %q<with no command statement> do
-            write_file(
+            IO.write(
               "#{FIG_SPEC_BASE_DIRECTORY}/#{Fig::Command::PackageLoader::DEFAULT_PACKAGE_FILE}",
               <<-END_PACKAGE_DOT_FIG
                 config default
@@ -50,7 +50,7 @@ describe 'Fig' do
           end
 
           it %q<with a command statement> do
-            write_file(
+            IO.write(
               "#{FIG_SPEC_BASE_DIRECTORY}/#{Fig::Command::PackageLoader::DEFAULT_PACKAGE_FILE}",
               <<-END_PACKAGE_DOT_FIG
                 config default
@@ -306,7 +306,7 @@ describe 'Fig' do
       end
 
       it %q<when given the --include-file option> do
-        write_file "#{CURRENT_DIRECTORY}/thingy.fig", 'config default end'
+        IO.write "#{CURRENT_DIRECTORY}/thingy.fig", 'config default end'
 
         out, err, exit_code = fig(
           [
@@ -324,7 +324,7 @@ describe 'Fig' do
       end
 
       it %q<a package with an include-file statement> do
-        write_file "#{CURRENT_DIRECTORY}/thingy.fig", 'config default end'
+        IO.write "#{CURRENT_DIRECTORY}/thingy.fig", 'config default end'
 
         input = <<-END
           grammar v2
@@ -346,7 +346,7 @@ describe 'Fig' do
 
       it %q<a package with an archive of unknown type> do
         archive_file = 'unknown.archive-type'
-        write_file "#{CURRENT_DIRECTORY}/#{archive_file}", ''
+        IO.write "#{CURRENT_DIRECTORY}/#{archive_file}", ''
 
         input = <<-END
           grammar v0
