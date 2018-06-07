@@ -1,6 +1,12 @@
+v1.27.6 - 2018/x/x
+
+  Miscellaneous:
+
+  - Upgrade to RSpec 3.7.
+
 v1.27.5 - 2018/6/7
 
-  Tweak:
+  Miscellaneous:
 
   - Gem dependencies tweaked to be more compatible with contemporary Ruby and
     Bundler versions.

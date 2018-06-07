@@ -29,7 +29,7 @@ gem 'treetop',           '>= 1.4.14'
 group :development do
   gem 'bundler',            '>= 1.0.15'
   gem 'rake',               '>= 0.8.7'
-  gem 'rspec',              '~> 2'
+  gem 'rspec',              '~> 3'
   gem 'simplecov',          '>= 0.6.2'
   gem 'simplecov-html',     '>= 0.5.3'
 end

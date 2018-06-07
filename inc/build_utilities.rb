@@ -20,7 +20,7 @@ def add_dependencies(gemspec)
 
   gemspec.add_development_dependency 'bundler',         '>= 1.0.15'
   gemspec.add_development_dependency 'rake',            '>= 0.8.7'
-  gemspec.add_development_dependency 'rspec',           '~> 2'
+  gemspec.add_development_dependency 'rspec',           '~> 3'
   gemspec.add_development_dependency 'simplecov',       '>= 0.6.2'
   gemspec.add_development_dependency 'simplecov-html',  '>= 0.5.3'
 
