@@ -1,8 +1,8 @@
-v1.27.6 - 2018/x/x
+v1.27.6 - 2018/6/8
 
   Miscellaneous:
 
-  - Upgrade to RSpec 3.7.
+  - Upgrade to RSpec 3.7 in order to be more compatible with Ruby v2.5.x.
 
 v1.27.5 - 2018/6/7
 
