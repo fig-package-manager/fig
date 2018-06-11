@@ -98,7 +98,18 @@ class Fig::RepositoryPackagePublisher
   def derive_login()
     # Etc.getpwuid() returns nil on Windows, but Etc.getlogin() will return the
     # wrong result on some systems if you su(1) to a different user.
-    if password_entry = Etc.getpwuid() and password_entry.name
+
+    password_entry = nil
+
+    begin
+      password_entry = Etc.getpwuid()
+    rescue ArgumentError
+      # This should come from
+      # https://github.com/ruby/ruby/blob/de5e6ca2b484dc19d007ed26b2a923a9a4b34f77/ext/etc/etc.c#L191,
+      # which we will silently fall back to .getlogin() for.
+    end
+
+    if password_entry and password_entry.name
       return password_entry.name
     end
 

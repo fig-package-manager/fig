@@ -1,3 +1,9 @@
+v1.27.6 - 2018/x/x
+
+  Bug fixes:
+
+  - More rubust detection of the current user's login.
+
 v1.27.6 - 2018/6/8
 
   Miscellaneous:
