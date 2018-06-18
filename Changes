@@ -1,3 +1,11 @@
+v1.27.8 - 2018/x/x
+
+  Miscellaneous:
+
+  - Bump net-ssh to 5.0.2 to hopefully gain the ability to transfer files
+    larger than 4GiB via SFTP (resolution of long standing bug:
+    https://github.com/net-ssh/net-sftp/issues/27).
+
 v1.27.7 - 2018/6/11
 
   Bug fixes:

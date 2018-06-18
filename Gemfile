@@ -22,7 +22,7 @@ gem 'libarchive-static', '>= 1.0.5'
 gem 'log4r',             '>= 1.1.5'
 gem 'net-netrc',         '>= 0.2.2'
 gem 'net-sftp',          '>= 2.1.2'
-gem 'net-ssh',           '>= 2.6.7'
+gem 'net-ssh',           '>= 5.0.2'
 gem 'rdoc',              '~> 4.3.0'
 gem 'treetop',           '>= 1.4.14'
 
