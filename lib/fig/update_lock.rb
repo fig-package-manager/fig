@@ -68,7 +68,7 @@ class Fig::UpdateLock
       created_file.close
     end
 
-    @lock = File.new(lock_file)
+    @lock = File.new(lock_file, 'r+')
 
     # *sigh* Ruby 1.8 doesn't support close_on_exec(), but we'll still use it
     # if we can as a better attempt at safety.

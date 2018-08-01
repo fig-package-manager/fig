@@ -1,5 +1,11 @@
 v1.27.9.beta.1 - 2018/8/1
 
+  Miscellaneous:
+
+  - Change how we open the repository lock file to deal with recent Linux
+    kernels.  In order to get an exclusive lock when the lock is on an NFS v4
+    shared volume, we need to have the lock file open for writing prior to lock
+    acquisition.
 
 v1.27.8 - 2018/6/18
 
