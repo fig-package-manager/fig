@@ -2,14 +2,15 @@
 
 require 'set'
 
+require 'fig/external_program'
 require 'fig/logging'
 require 'fig/logging/colorizable'
+require 'fig/operating_system'
 require 'fig/package_descriptor'
 require 'fig/repository_error'
-require 'fig/working_directory_metadata'
 require 'fig/user_input_error'
+require 'fig/working_directory_metadata'
 
-module Fig; end
 
 # Copies files from the project directories in FIG_HOME to the user's working
 # directory. It keeps track of which files have already been copied, and which
@@ -225,9 +226,16 @@ class Fig::WorkingDirectoryMaintainer
         Fig::Logging.info("Overwriting #{target}.")
       end
 
-      FileUtils.copy_entry(
-        source, target, preserve, false, :remove_destination
-      )
+      if Fig::OperatingSystem.macos?
+        # With APFS, Ruby's internal preserve gets the mtime wrong by a few
+        # microseconds, which sometimes results in the copied file considered
+        # to be out of date for future fig invocations.
+        run_macos_cp_for_file(source, target, preserve)
+      else
+        FileUtils.copy_entry(
+          source, target, preserve, false, :remove_destination
+        )
+      end
     end
 
     if @package_meta
@@ -251,7 +259,44 @@ class Fig::WorkingDirectoryMaintainer
     end
 
     return true if ! File.exist?(target)
-    return File.mtime(source) > File.mtime(target)
+    return true if File.mtime(source) > File.mtime(target)
+    return File.size(source) != File.size(target)
+  end
+
+  def run_macos_cp_for_file(source, target, preserve)
+    command = [
+      '/bin/cp',
+        '-f',       # Force it
+        '-P',       # Don't follow symlinks
+        '-X',       # Don't copy extended attributes or resource forks
+    ]
+
+    if preserve
+      command << '-p'
+    end
+
+    command << source
+    command << target
+
+    begin
+      output, errors, result = Fig::ExternalProgram.capture command
+    rescue Errno::ENOENT => error
+      Fig::Logging.error(
+        %Q<Could not run "#{command.join ' '}": #{error.message}.>
+      )
+
+      return false
+    end
+
+    if result && ! result.success?
+      Fig::Logging.error(
+        %Q<Could not run "#{command.join ' '}": #{result}: #{errors}>
+      )
+
+      return false
+    end
+
+    return true
   end
 
   def clean_up_package_files(package_meta = @package_meta)

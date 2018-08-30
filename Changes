@@ -1,5 +1,10 @@
 v1.27.11.beta.1 - 2018/8/30
 
+  Bug fixes:
+
+  - Attempt to work around a problem on MacOS with APFS where the timestamp on
+    retrieved files does not get set properly so that subsequent invocations
+    think that the files are out of date.
 
 v1.27.10 - 2018/8/1
 

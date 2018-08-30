@@ -33,6 +33,10 @@ class Fig::OperatingSystem
     return !! (RbConfig::CONFIG['host_os'] =~ /mswin|mingw/)
   end
 
+  def self.macos?
+    return !! (RbConfig::CONFIG['host_os'] =~ /^darwin/)
+  end
+
   def self.unix?
     ! Fig::OperatingSystem.windows?
   end
