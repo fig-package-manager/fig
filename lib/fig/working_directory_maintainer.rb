@@ -218,18 +218,24 @@ class Fig::WorkingDirectoryMaintainer
       end
       FileUtils.mkdir_p(File.dirname(target))
 
+      is_symlink = File.symlink?(source)
+
       # If the source is a dangling symlink, then there's no time, etc. to
       # preserve.
-      preserve = File.exist?(source) && ! File.symlink?(source)
+      preserve = File.exist?(source) && ! is_symlink
 
       if File.exist?(target)
         Fig::Logging.info("Overwriting #{target}.")
       end
 
-      if Fig::OperatingSystem.macos?
+      if not is_symlink and Fig::OperatingSystem.macos?
         # With APFS, Ruby's internal preserve gets the mtime wrong by a few
         # microseconds, which sometimes results in the copied file considered
         # to be out of date for future fig invocations.
+        #
+        # We don't use this for symlinks because there does not appear to be a
+        # way with MacOS /bin/cp to copy symlinks as symlinks, especially
+        # dangling symlinks.
         run_macos_cp_for_file(source, target, preserve)
       else
         FileUtils.copy_entry(
