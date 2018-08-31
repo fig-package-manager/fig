@@ -2,7 +2,6 @@
 
 require 'set'
 
-require 'fig/external_program'
 require 'fig/logging'
 require 'fig/logging/colorizable'
 require 'fig/operating_system'
@@ -228,20 +227,7 @@ class Fig::WorkingDirectoryMaintainer
         Fig::Logging.info("Overwriting #{target}.")
       end
 
-      if not is_symlink and Fig::OperatingSystem.macos?
-        # With APFS, Ruby's internal preserve gets the mtime wrong by a few
-        # microseconds, which sometimes results in the copied file considered
-        # to be out of date for future fig invocations.
-        #
-        # We don't use this for symlinks because there does not appear to be a
-        # way with MacOS /bin/cp to copy symlinks as symlinks, especially
-        # dangling symlinks.
-        run_macos_cp_for_file(source, target, preserve)
-      else
-        FileUtils.copy_entry(
-          source, target, preserve, false, :remove_destination
-        )
-      end
+      FileUtils.copy_entry source, target, preserve, false, :remove_destination
     end
 
     if @package_meta
@@ -265,44 +251,25 @@ class Fig::WorkingDirectoryMaintainer
     end
 
     return true if ! File.exist?(target)
-    return true if File.mtime(source) > File.mtime(target)
-    return File.size(source) != File.size(target)
-  end
 
-  def run_macos_cp_for_file(source, target, preserve)
-    command = [
-      '/bin/cp',
-        '-f',       # Force it
-        '-P',       # Don't follow symlinks
-        '-X',       # Don't copy extended attributes or resource forks
-    ]
+    return true if File.size(source) != File.size(target)
 
-    if preserve
-      command << '-p'
+    if Fig::OperatingSystem.macos?
+      # With APFS, at least on High Sierra, even «/bin/cp -p» does not preserve
+      # timestamps properly.  The timestamps get truncated to microseconds.  So
+      # we have to do this rigamarole.
+      source_time = File.mtime(source)
+      target_time = File.mtime(target)
+
+      return true if source_time.to_i > target_time.to_i
+
+      source_subsecond = source_time.nsec / 1000
+      target_subsecond = target_time.nsec / 1000
+
+      return source_subsecond > target_subsecond
     end
 
-    command << source
-    command << target
-
-    begin
-      output, errors, result = Fig::ExternalProgram.capture command
-    rescue Errno::ENOENT => error
-      Fig::Logging.error(
-        %Q<Could not run "#{command.join ' '}": #{error.message}.>
-      )
-
-      return false
-    end
-
-    if result && ! result.success?
-      Fig::Logging.error(
-        %Q<Could not run "#{command.join ' '}": #{result}: #{errors}>
-      )
-
-      return false
-    end
-
-    return true
+    return File.mtime(source) > File.mtime(target)
   end
 
   def clean_up_package_files(package_meta = @package_meta)
