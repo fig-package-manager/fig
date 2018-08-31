@@ -1,5 +1,9 @@
 v1.27.11.beta.3 - 2018/8/31
 
+  Bug fixes:
+
+  - Fixed a bug in warning when one retrieve statement overrides another.  Bug
+    reported by Tom Anderson.
 
 v1.27.11.beta.2 - 2018/8/31
 
