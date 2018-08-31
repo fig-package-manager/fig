@@ -1,5 +1,11 @@
 v1.27.11.beta.2 - 2018/8/31
 
+  Bug fixes:
+
+  - It turns out that even «cp -p» does not properly preserve timestamps on
+    APFS.  *sigh*  It turns out that what is happening is that the nanoseconds
+    are getting truncated.  So, change file time comparisons to only take
+    microseconds into account on macOS.
 
 v1.27.11.beta.1 - 2018/8/30
 
@@ -10,7 +16,7 @@ v1.27.11.beta.1 - 2018/8/30
 
   Bug fixes:
 
-  - Attempt to work around a problem on MacOS with APFS where the timestamp on
+  - Attempt to work around a problem on macOS with APFS where the timestamp on
     retrieved files does not get set properly so that subsequent invocations
     think that the files are out of date.
 
