@@ -29,40 +29,50 @@ class Fig::OperatingSystem
   WINDOWS_FILE_NAME_ILLEGAL_CHARACTERS = %w[ \\ / : * ? " < > | ]
   UNIX_FILE_NAME_ILLEGAL_CHARACTERS    = %w[ / ]
 
-  def self.windows?
-    return !! (RbConfig::CONFIG['host_os'] =~ /mswin|mingw/)
-  end
+  class << self
+    def windows?
+      return @is_windows if not @is_windows.nil?
 
-  def self.macos?
-    return !! (RbConfig::CONFIG['host_os'] =~ /^darwin/)
-  end
+      @is_windows = !! (RbConfig::CONFIG['host_os'] =~ /mswin|mingw/)
 
-  def self.unix?
-    ! Fig::OperatingSystem.windows?
-  end
-
-  def self.file_name_illegal_characters()
-    if Fig::OperatingSystem.windows?
-      return WINDOWS_FILE_NAME_ILLEGAL_CHARACTERS
+      return @is_windows
     end
 
-    return UNIX_FILE_NAME_ILLEGAL_CHARACTERS
-  end
+    def macos?
+      return @is_macos if not @is_macos.nil?
 
-  def self.wrap_variable_name_with_shell_expansion(variable_name)
-    if Fig::OperatingSystem.windows?
-      return "%#{variable_name}%"
-    else
-      return "$#{variable_name}"
-    end
-  end
+      @is_macos = !! (RbConfig::CONFIG['host_os'] =~ /^darwin/)
 
-  def self.get_environment_variables(initial_values = nil)
-    if Fig::OperatingSystem.windows?
-      return Fig::EnvironmentVariables::CaseInsensitive.new(initial_values)
+      return @is_macos
     end
 
-    return Fig::EnvironmentVariables::CaseSensitive.new(initial_values)
+    def unix?
+      ! Fig::OperatingSystem.windows?
+    end
+
+    def file_name_illegal_characters()
+      if windows?
+        return WINDOWS_FILE_NAME_ILLEGAL_CHARACTERS
+      end
+
+      return UNIX_FILE_NAME_ILLEGAL_CHARACTERS
+    end
+
+    def wrap_variable_name_with_shell_expansion(variable_name)
+      if Fig::OperatingSystem.windows?
+        return "%#{variable_name}%"
+      else
+        return "$#{variable_name}"
+      end
+    end
+
+    def get_environment_variables(initial_values = nil)
+      if windows?
+        return Fig::EnvironmentVariables::CaseInsensitive.new(initial_values)
+      end
+
+      return Fig::EnvironmentVariables::CaseSensitive.new(initial_values)
+    end
   end
 
   def initialize(login)
