@@ -1,4 +1,12 @@
+v1.27.11.beta.2 - 2018/8/31
+
+
 v1.27.11.beta.1 - 2018/8/30
+
+  Miscellaneous:
+
+  - In deciding whether a retrieved file has changed, in addition to checking
+    file modification times, we check file sizes.
 
   Bug fixes:
 
