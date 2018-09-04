@@ -1,20 +1,4 @@
-v1.27.11.beta.3 - 2018/8/31
-
-  Bug fixes:
-
-  - Fixed a bug in warning when one retrieve statement overrides another.  Bug
-    reported by Tom Anderson.
-
-v1.27.11.beta.2 - 2018/8/31
-
-  Bug fixes:
-
-  - It turns out that even «cp -p» does not properly preserve timestamps on
-    APFS.  *sigh*  It turns out that what is happening is that the nanoseconds
-    are getting truncated.  So, change file time comparisons to only take
-    microseconds into account on macOS.
-
-v1.27.11.beta.1 - 2018/8/30
+v1.27.12 - 2018/9/4
 
   Miscellaneous:
 
@@ -23,9 +7,23 @@ v1.27.11.beta.1 - 2018/8/30
 
   Bug fixes:
 
-  - Attempt to work around a problem on macOS with APFS where the timestamp on
-    retrieved files does not get set properly so that subsequent invocations
-    think that the files are out of date.  Bug reported by Jay Fields.
+  - On macOS, only compare file modification times to the microsecond.  This
+    works around a problem with APFS where copied timestamps have the
+    nanoseconds truncated.  Bug reported by Jay Fields.
+  - Fixed a bug in warning when one retrieve statement overrides another.  Bug
+    reported by Tom Anderson.
+
+v1.27.11.beta.3 - 2018/8/31
+
+  - Test release.
+
+v1.27.11.beta.2 - 2018/8/31
+
+  - Test release.
+
+v1.27.11.beta.1 - 2018/8/30
+
+  - Test release.
 
 v1.27.10 - 2018/8/1
 
@@ -38,7 +36,7 @@ v1.27.10 - 2018/8/1
 
 v1.27.9.beta.1 - 2018/8/1
 
- - Test release.
+  - Test release.
 
 v1.27.8 - 2018/6/18
 
