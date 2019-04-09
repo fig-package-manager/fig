@@ -42,9 +42,6 @@ class Fig::Parser
     2 => Fig::Grammar::V2Parser,
   }
 
-  # TODO: Remove this once stablized.
-  @@seen_v2 = false
-
   def get_grammar_version(unparsed_package)
     version_parser = Fig::Grammar::VersionIdentificationParser.new()
 
@@ -70,12 +67,6 @@ class Fig::Parser
     if version > 2
       raise Fig::PackageParseError.new(
         %Q<Don't know how to parse grammar version #{version}#{statement.position_string()}.>
-      )
-    end
-    if version == 2 && ! @@seen_v2
-      @@seen_v2 = true
-      Fig::Logging.info(
-        'Encountered v2 grammar.  This is experimental and subject to change without notice.'
       )
     end
 
