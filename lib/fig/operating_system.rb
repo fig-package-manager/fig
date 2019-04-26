@@ -6,6 +6,7 @@ require 'fileutils'
 # this module to avoid conflicts with Fig::Statement::Archive
 require 'libarchive_ruby'
 require 'rbconfig'
+require 'set'
 
 require 'fig/at_exit'
 require 'fig/environment_variables/case_insensitive'
@@ -200,12 +201,14 @@ class Fig::OperatingSystem
 
   # Expects paths_to_archive as an Array of paths.
   def create_archive(archive_name, paths_to_archive)
+    existing_files = Set.new
+
     # TODO: Need to verify files_to_archive exists.
     ::Archive.write_open_filename(
       archive_name, ::Archive::COMPRESSION_GZIP, ::Archive::FORMAT_TAR
     ) do |writer|
       paths_to_archive.each do |path|
-        add_path_to_archive(path, writer)
+        add_path_to_archive(path, existing_files, writer)
       end
     end
   end
@@ -290,10 +293,16 @@ class Fig::OperatingSystem
     return protocol, uri
   end
 
-  def add_path_to_archive(path, archive_writer)
+  def add_path_to_archive(path, existing_files, archive_writer)
+    return if existing_files.include? path
+
+    cleaned_path = path.chomp '/' # chomp required on Windows
+
     children = []
-    archive_writer.new_entry do |entry|
-      entry.copy_lstat(path.chomp '/') # chomp required on Windows
+    archive_writer.new_entry do
+      |entry|
+
+      entry.copy_lstat(cleaned_path)
       entry.pathname = path
       if entry.symbolic_link?
         linked = File.readlink(path)
@@ -308,9 +317,13 @@ class Fig::OperatingSystem
       end
     end
 
+    existing_files << cleaned_path
+
     children.each do
       |child|
-      add_path_to_archive(File.join(path, child), archive_writer)
+      add_path_to_archive(
+        File.join(path, child), existing_files, archive_writer,
+      )
     end
 
     return
