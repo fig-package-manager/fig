@@ -294,9 +294,11 @@ class Fig::OperatingSystem
   end
 
   def add_path_to_archive(path, existing_files, archive_writer)
-    return if existing_files.include? path
+    # #chomp() required on Windows for #copy_lstat(), but also useful for
+    # de-duping directories specified both with and without trailing slash.
+    cleaned_path = path.chomp '/'
 
-    cleaned_path = path.chomp '/' # chomp required on Windows
+    return if existing_files.include? cleaned_path
 
     children = []
     archive_writer.new_entry do
