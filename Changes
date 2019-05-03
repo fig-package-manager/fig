@@ -1,10 +1,14 @@
-v1.27.14.beta.1 - 2019/4/26
+v1.27.15 - 2019/5/3
 
   Bug fixes:
 
   - Recursive resource globbing (i.e. use of double asterisks) could result in
     files being stored multiple times in an a package.  Thanks to bug report
-    from Matt Hellige.
+    and code digging from Matt Hellige.
+
+v1.27.14.beta.1 - 2019/4/26
+
+  - Test release.
 
 v1.27.13 - 2019/4/9
 
