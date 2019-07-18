@@ -2,12 +2,19 @@
 
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
+require 'fig/operating_system'
 require 'fig/working_directory_maintainer'
 
 describe 'WorkingDirectoryMaintainer' do
   let(:base_directory)    { "#{CURRENT_DIRECTORY}/retrieve-test" }
   let(:working_directory) { "#{base_directory}/working" }
   let(:source_directory)  { "#{base_directory}/source" }
+
+  def new_maintainer
+    return Fig::WorkingDirectoryMaintainer.new(
+      working_directory, Fig::OperatingSystem.macos?,
+    )
+  end
 
   before(:each) do
     clean_up_test_environment
@@ -35,7 +42,7 @@ describe 'WorkingDirectoryMaintainer' do
     working_baz = File.join(working_directory, 'baz.txt')
 
     # Retrieve files A and B
-    maintainer = Fig::WorkingDirectoryMaintainer.new(working_directory)
+    maintainer = new_maintainer
     maintainer.switch_to_package_version('foo', '1.2.3')
     maintainer.retrieve(source_foo, 'foo.txt')
     maintainer.retrieve(source_bar, 'bar.txt')
@@ -52,7 +59,7 @@ describe 'WorkingDirectoryMaintainer' do
 
     # Save and reload
     maintainer.prepare_for_shutdown(:purged_unused_packages)
-    maintainer = Fig::WorkingDirectoryMaintainer.new(working_directory)
+    maintainer = new_maintainer
 
     # Switch back to original version
     maintainer.switch_to_package_version('foo', '1.2.3')
@@ -69,7 +76,7 @@ describe 'WorkingDirectoryMaintainer' do
     File.open("#{source_directory}/executable", 'w') {|f| f << 'executable.exe'}
     FileUtils.chmod(0755, "#{source_directory}/executable")
 
-    maintainer = Fig::WorkingDirectoryMaintainer.new(working_directory)
+    maintainer = new_maintainer
     maintainer.switch_to_package_version('foo', '1.2.3')
     maintainer.retrieve("#{source_directory}/plain", 'plain')
     maintainer.retrieve("#{source_directory}/executable", 'executable.exe')
@@ -84,9 +91,7 @@ describe 'WorkingDirectoryMaintainer' do
     metadata_file = "#{working_directory}/.fig/retrieve"
     IO.write(metadata_file, 'random garbage')
 
-    expect {
-      Fig::WorkingDirectoryMaintainer.new(working_directory)
-    }.to raise_error(/parse error/)
+    expect { new_maintainer }.to raise_error(/parse error/)
 
     # This is so much fun.  It appears that once we've had a file open within
     # this process, we cannot delete that file, i.e. "File.rm(metadata_file)"

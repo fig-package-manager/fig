@@ -17,8 +17,9 @@ require 'fig/working_directory_metadata'
 # that we never have files from two different versions of the same package in
 # the user's working directory.
 class Fig::WorkingDirectoryMaintainer
-  def initialize(base_dir)
-    @base_dir = base_dir
+  def initialize(base_dir, usec_mtime_comparisons)
+    @base_dir                 = base_dir
+    @usec_mtime_comparisons   = usec_mtime_comparisons
     @package_metadata_by_name = {}
     @local_fig_data_directory = File.join(@base_dir, '.fig')
 
@@ -254,10 +255,7 @@ class Fig::WorkingDirectoryMaintainer
 
     return true if File.size(source) != File.size(target)
 
-    if Fig::OperatingSystem.macos?
-      # With APFS, at least on High Sierra, even «/bin/cp -p» does not preserve
-      # timestamps properly.  The timestamps get truncated to microseconds.  So
-      # we have to do this rigamarole.
+    if @usec_mtime_comparisons
       source_time = File.mtime(source)
       target_time = File.mtime(target)
 

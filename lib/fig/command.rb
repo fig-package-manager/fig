@@ -272,7 +272,13 @@ class Fig::Command
 
   def prepare_runtime_environment()
     if retrieves_should_happen?
-      @working_directory_maintainer = Fig::WorkingDirectoryMaintainer.new('.')
+      # With APFS, at least on High Sierra, even «/bin/cp -p» does not preserve
+      # timestamps properly.  The timestamps get truncated to microseconds.
+      usec_mtime_comparisons =
+        Fig::OperatingSystem.macos? || @options.usec_mtime_comparisons?
+
+      @working_directory_maintainer =
+        Fig::WorkingDirectoryMaintainer.new('.', usec_mtime_comparisons)
 
       Fig::AtExit.add do
         @working_directory_maintainer.prepare_for_shutdown(

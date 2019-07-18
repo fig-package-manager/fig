@@ -165,6 +165,10 @@ class Fig::Command::Options
     return @no_remote_figrc
   end
 
+  def usec_mtime_comparisons?
+    return @usec_mtime_comparisons
+  end
+
   def suppress_warning_include_statement_missing_version?()
     return @suppress_warning_include_statement_missing_version
   end
@@ -733,6 +737,13 @@ Running commands:
       "  (#{response_list}, default is wait)"
     ) do |response|
       @update_lock_response = response
+    end
+
+    @parser.on(
+      '--microsecond-only-file-modification-time-comparisons',
+      %q<to deal with situations with truncated times; always on on macOS>
+    ) do
+      @usec_mtime_comparisons = true
     end
 
     @parser.on(

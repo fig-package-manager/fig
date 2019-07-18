@@ -1,5 +1,9 @@
 v1.27.16.beta.1 - 2019/7/18
 
+  Miscellaneous:
+
+  - Add --microsecond-only-file-modification-time-comparisons command-line
+    option to deal with unnamed (ok, VirtualBox) truncating values.
 
 v1.27.15 - 2019/5/3
 
