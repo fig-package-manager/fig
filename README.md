@@ -43,4 +43,4 @@ there's a Vim plugin in `support/vim`.
 
 # Copyright
 
-Copyright ©2009-2018 Matthew Foemmel. See LICENSE for details.
+Copyright ©2009-2019 Matthew Foemmel. See LICENSE for details.
