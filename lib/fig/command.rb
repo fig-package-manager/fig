@@ -275,7 +275,11 @@ class Fig::Command
       # With APFS, at least on High Sierra, even «/bin/cp -p» does not preserve
       # timestamps properly.  The timestamps get truncated to microseconds.
       usec_mtime_comparisons =
-        Fig::OperatingSystem.macos? || @options.usec_mtime_comparisons?
+            Fig::OperatingSystem.macos?           \
+        ||  @options.usec_mtime_comparisons?      \
+        ||  @application_configuration[
+              'only compare file modification times to the microsecond'
+            ]
 
       @working_directory_maintainer =
         Fig::WorkingDirectoryMaintainer.new('.', usec_mtime_comparisons)

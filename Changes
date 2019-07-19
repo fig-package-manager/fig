@@ -1,12 +1,16 @@
 v1.27.16.beta.2 - 2019/7/19
 
+  - Add app configuration option equivalent to
+    --microsecond-only-file-modification-time-comparisons command-line option:
+    "only compare file modification times to the microsecond".
 
 v1.27.16.beta.1 - 2019/7/18
 
   Miscellaneous:
 
   - Add --microsecond-only-file-modification-time-comparisons command-line
-    option to deal with unnamed (ok, VirtualBox) truncating values.
+    option to deal with unnamed environments (ok, VirtualBox) truncating file
+    mtime values.
 
 v1.27.15 - 2019/5/3
 
