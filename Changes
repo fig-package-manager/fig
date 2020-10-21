@@ -1,3 +1,10 @@
+v1.27.18 - 2020/10/21
+
+  Miscellaneous:
+
+  - Bump Bundler version in Gemfile.lock in order to facilitate use of MRI/YARV
+    v2.7.x.
+
 v1.27.17 - 2019/7/19
 
   Miscellaneous:
