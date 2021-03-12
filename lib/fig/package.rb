@@ -103,7 +103,18 @@ class Fig::Package
   def <=>(other)
     return if not other
 
-    compared = compare_components(name, other.name)
+    if (
+          not name              \
+      and not other.name        \
+      and not description       \
+      and not other.description \
+      and file_path             \
+      and other.file_path
+    )
+      compared = compare_components(file_path, other.file_path)
+    else
+      compared = compare_components(name, other.name)
+    end
     return compared if compared != 0
 
     return compare_components(version, other.version)
