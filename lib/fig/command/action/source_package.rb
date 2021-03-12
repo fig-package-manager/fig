@@ -12,7 +12,7 @@ class Fig::Command::Action::SourcePackage
   include Fig::Command::Action::Role::HasNoSubAction
 
   def options()
-    return %w<--get>
+    return %w<-source-package>
   end
 
   def descriptor_requirement()
