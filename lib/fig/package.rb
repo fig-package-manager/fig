@@ -185,7 +185,7 @@ class Fig::Package
       return "[#{@file_path}]"
     end
 
-    return @description
+    return "<#{@description}>"
   end
 
   def to_s
@@ -204,7 +204,7 @@ class Fig::Package
   # Useful for debugging; should not be used for regular output.
   def to_descriptive_string_with_config(config_name)
     return Fig::PackageDescriptor.format(
-      name, version, config_name, :use_default_config, description
+      name_or_file_or_description, version, config_name, :use_default_config, description
     )
   end
 
