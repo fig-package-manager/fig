@@ -216,7 +216,7 @@ class Fig::RuntimeEnvironment
     if package != starting_package
       next_package_depth = current_package_depth + 1
 
-      return if @suppress_includes and next_package_depth > @suppress_includes
+      return if @suppress_includes.is_a? Integer and next_package_depth > @suppress_includes
     else
       next_package_depth = current_package_depth
     end

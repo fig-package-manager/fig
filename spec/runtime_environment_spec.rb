@@ -43,7 +43,7 @@ def new_example_package(environment, name, extra_statements, variable_value)
   # Kind of a cheat: we're creating a "set" statement that isn't in a "config"
   # block and then shoving it through the RuntimeEnvironment directly.
   set_statement = new_example_set_statement(name, variable_value)
-  environment.apply_config_statement(package, set_statement, nil)
+  environment.apply_config_statement(package, set_statement, nil, 0)
 
   return package
 end
