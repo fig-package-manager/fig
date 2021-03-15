@@ -87,6 +87,7 @@ Standard options (represented as "[...]" above):
 
       [-R | --suppress-retrieves] [--suppress-cleanup-of-retrieves]
       [--suppress-all-includes] [--suppress-cross-package-includes]
+      [--suppress-includes-beyond-package-depth COUNT]
 
       [--file PATH] [--no-file]
       [{-c | --config} CONFIG]

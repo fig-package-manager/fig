@@ -44,7 +44,7 @@ class Fig::Command::PackageApplier
       @synthetic_package_for_command_line =
         synthesize_package_for_command_line_options(ignore_base_config)
       @environment.apply_config(
-        @synthetic_package_for_command_line, Fig::Package::DEFAULT_CONFIG, nil
+        @synthetic_package_for_command_line, Fig::Package::DEFAULT_CONFIG, nil,
       )
     rescue Fig::NoSuchPackageConfigError => exception
       make_no_such_package_exception_descriptive(exception)

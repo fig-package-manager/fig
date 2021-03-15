@@ -302,6 +302,20 @@ Running commands:
       set_suppress_includes(:cross_package)
     end
 
+    @parser.on(
+      '--suppress-includes-beyond-package-depth DEPTH',
+      STARTS_WITH_NON_HYPHEN,
+      %q<only procesws includes to the package depth specified (you want 2 or greater)>,
+    ) do |depth|
+      if depth !~ /\A\d+\z/
+        raise Fig::Command::OptionError.new(
+          'Value of --suppress-includes-beyond-package-depth must be an integer.'
+        )
+      end
+
+      set_suppress_includes(depth.to_i)
+    end
+
     return
   end
 
@@ -832,7 +846,7 @@ Running commands:
   def set_suppress_includes(value)
     if @suppress_includes
       raise Fig::Command::OptionError.new(
-        'Can only specify one --suppress-all-includes/--suppress-cross-package-includes option.'
+        'Can only specify one --suppress-all-includes/--suppress-cross-package-includes/--suppress-includes-beyond-package-depth option.'
       )
     end
 

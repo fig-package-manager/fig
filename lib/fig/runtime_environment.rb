@@ -89,13 +89,13 @@ class Fig::RuntimeEnvironment
     return @named_packages[name]
   end
 
-  def apply_config(package, config_name, backtrace)
+  def apply_config(package, config_name, backtrace, current_package_depth = 0)
     if package.applied_config_names.member?(config_name)
       return
     end
 
     Fig::Logging.debug(
-      "Applying #{package.to_descriptive_string_with_config config_name}."
+      "Applying #{package.to_descriptive_string_with_config config_name}, package depth #{current_package_depth}."
     )
 
     new_backtrace = backtrace ||
@@ -120,7 +120,7 @@ class Fig::RuntimeEnvironment
     package.add_applied_config_name(config_name)
     config.statements.each do
       |statement|
-      apply_config_statement(package, statement, new_backtrace)
+      apply_config_statement(package, statement, new_backtrace, current_package_depth)
     end
 
     return
@@ -161,16 +161,16 @@ class Fig::RuntimeEnvironment
   # In order for this to work correctly, any Overrides need to be processed
   # before any other kind of Statement.  The Statement::Configuration class
   # guarantees that those come first in its set of Statements.
-  def apply_config_statement(package, statement, backtrace)
+  def apply_config_statement(package, statement, backtrace, current_package_depth)
     case statement
     when Fig::Statement::Path
       prepend_variable(package, statement, backtrace)
     when Fig::Statement::Set
       set_variable(package, statement, backtrace)
     when Fig::Statement::Include
-      include_config(package, statement, backtrace)
+      include_config(package, statement, backtrace, current_package_depth)
     when Fig::Statement::IncludeFile
-      include_file_config(package, statement, backtrace)
+      include_file_config(package, statement, backtrace, current_package_depth)
     when Fig::Statement::Override
       backtrace.add_override(statement)
     end
@@ -195,7 +195,9 @@ class Fig::RuntimeEnvironment
 
   private
 
-  def include_config(starting_package, include_statement, backtrace)
+  def include_config(
+    starting_package, include_statement, backtrace, current_package_depth
+  )
     # Because package application starts with the synthetic package for the
     # command-line, we can't really disable includes, full stop.  Instead, we
     # use the fact that the synthetic package hands the Statement::Include the
@@ -211,10 +213,19 @@ class Fig::RuntimeEnvironment
       &&  package != starting_package          \
       &&  package != include_statement.included_package
 
+    if package != starting_package
+      next_package_depth = current_package_depth + 1
+
+      return if @suppress_includes and next_package_depth > @suppress_includes
+    else
+      next_package_depth = current_package_depth
+    end
+
     apply_config(
       package,
       resolved_descriptor.config || Fig::Package::DEFAULT_CONFIG,
-      new_backtrace
+      new_backtrace,
+      next_package_depth,
     )
 
     return
@@ -261,8 +272,10 @@ class Fig::RuntimeEnvironment
     return package, resolved_descriptor, new_backtrace
   end
 
-  def include_file_config(including_package, include_file_statement, backtrace)
-    return if @suppress_includes
+  def include_file_config(
+    including_package, include_file_statement, backtrace, current_package_depth
+  )
+    return if @suppress_includes.is_a? Symbol
 
     full_path = include_file_statement.full_path_relative_to including_package
 
@@ -273,8 +286,19 @@ class Fig::RuntimeEnvironment
     package       = package_for_file(including_package, full_path, backtrace)
     config_name   = include_file_statement.config_name
 
+    if package != including_package
+      next_package_depth = current_package_depth + 1
+
+      return if @suppress_includes and next_package_depth > @suppress_includes
+    else
+      next_package_depth = current_package_depth
+    end
+
     apply_config(
-      package, config_name || Fig::Package::DEFAULT_CONFIG, new_backtrace
+      package,
+      config_name || Fig::Package::DEFAULT_CONFIG,
+      new_backtrace,
+      next_package_depth,
     )
 
     return
