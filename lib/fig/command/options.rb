@@ -305,7 +305,7 @@ Running commands:
     @parser.on(
       '--suppress-includes-beyond-package-depth DEPTH',
       STARTS_WITH_NON_HYPHEN,
-      %q<only procesws includes to the package depth specified (you want 2 or greater)>,
+      %q<only process includes to the package depth specified (you want 2 or greater)>,
     ) do |depth|
       if depth !~ /\A\d+\z/
         raise Fig::Command::OptionError.new(
