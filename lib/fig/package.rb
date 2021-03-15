@@ -102,14 +102,14 @@ class Fig::Package
 
   def <=>(other)
     return if not other
+    return if synthetic?
+    return if other.synthetic?
 
     if (
           not name              \
       and not other.name        \
       and not description       \
-      and not other.description \
-      and file_path             \
-      and other.file_path
+      and not other.description
     )
       compared = compare_components(file_path, other.file_path)
     else
