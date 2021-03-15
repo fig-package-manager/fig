@@ -101,7 +101,9 @@ class Fig::PackageDescriptor
   end
 
   def <=>(other)
-    return to_string() <=> other.to_string()
+    self_string  = to_string(:use_default_config, :use_file_or_description)
+    other_string = other.to_string(:use_default_config, :use_file_or_description)
+    return self_string <=> other_string
   end
 
 
