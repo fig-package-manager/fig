@@ -1,17 +1,23 @@
-v1.27.19.beta.1 - 2021/3/15
+v1.27.20 - 2021/3/17
 
   Miscellaneous:
 
   - Add --suppress-includes-beyond-package-depth command-line option to allow
     looking at dependencies to a limited level.  Most likely, you want to
     specify a value of 2 to get at your direct dependencies, but not your
-    indirect ones.
+    indirect ones.  This is because there is a virtual package for the
+    command-line, your base package, whether from a file or a descriptor, and
+    then the dependency.
   - Better debugging output when dealing with file-based package.
 
   Bug fixes:
 
   - Fixed comparison of synthetic packages and comparison of file-based
     packages.
+
+v1.27.19.beta.1 - 2021/3/15
+
+  - Test release.
 
 v1.27.18 - 2020/10/21
 
