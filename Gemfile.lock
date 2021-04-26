@@ -2,12 +2,14 @@ GEM
   remote: http://rubygems.org/
   specs:
     Platform (0.4.0)
+    bcrypt_pbkdf (1.1.0)
+    bcrypt_pbkdf (1.1.0-x86-mingw32)
     colorize (0.7.5)
     diff-lcs (1.3)
     docile (1.1.5)
+    ed25519 (1.2.4)
     highline (1.6.21)
     libarchive-static (1.0.5)
-    libarchive-static (1.0.5-i386-mingw32)
     libarchive-static (1.0.5-x86-mingw32)
     log4r (1.1.10)
     multi_json (1.10.1)
@@ -15,7 +17,7 @@ GEM
       Platform (>= 0.3.0)
     net-sftp (2.1.2)
       net-ssh (>= 2.6.5)
-    net-ssh (5.0.2)
+    net-ssh (6.1.0)
     polyglot (0.3.5)
     rake (10.4.2)
     rdoc (4.3.0)
@@ -45,14 +47,16 @@ PLATFORMS
   x86-mingw32
 
 DEPENDENCIES
+  bcrypt_pbkdf (>= 1.1.0)
   bundler (>= 1.0.15)
   colorize (>= 0.5.8)
+  ed25519 (>= 1.2.4)
   highline (>= 1.6.19)
   libarchive-static (>= 1.0.5)
   log4r (>= 1.1.5)
   net-netrc (>= 0.2.2)
   net-sftp (>= 2.1.2)
-  net-ssh (>= 5.0.2)
+  net-ssh (>= 6.1.0)
   rake (>= 0.8.7)
   rdoc (~> 4.3.0)
   rspec (~> 3)
