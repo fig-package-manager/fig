@@ -1,9 +1,13 @@
-v1.27.21.beta.1 - 2021/4/26
+v1.27.22 - 2021/4/28
 
   Miscellaneous:
 
   - Update net-ssh and add dependencies on non-Windows platforms to be
     compatible with ED25519 SSH keys.
+
+v1.27.21.beta.1 - 2021/4/26
+
+  - Test release.
 
 v1.27.20 - 2021/3/17
 
