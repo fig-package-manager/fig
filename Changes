@@ -1,3 +1,10 @@
+v1.27.23 - 2021/8/3
+
+  Bug fix:
+
+  - Fix for traversing include-file dependencies with non-default config names.
+    Thanks for to Gabriel Burca for the bug report.
+
 v1.27.22 - 2021/4/28
 
   Miscellaneous:
