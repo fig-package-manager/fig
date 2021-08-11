@@ -1,3 +1,11 @@
+v1.27.24.beta.1 - 2021/8/x
+
+  Miscellaneous:
+
+  - Allow specifying a FIG_LD_LIBRARY_PATH for the value that should be
+    available as LD_LIBRARY_PATH from Fig, in case the Fig runtime itself needs
+    to have its own version of LD_LIBRARY_PATH.
+
 v1.27.23 - 2021/8/3
 
   Bug fix:

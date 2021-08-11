@@ -1,5 +1,5 @@
 # coding: utf-8
 
 module Fig
-  VERSION = '1.27.23'
+  VERSION = '1.27.24.beta.1'
 end
