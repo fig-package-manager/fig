@@ -291,9 +291,26 @@ class Fig::Command
       end
     end
 
+    initial_environment_variables = nil
+    if ENV.has_key? 'FIG_LD_LIBRARY_PATH'
+      initial_environment_variables = {
+        'LD_LIBRARY_PATH' => ENV.delete('FIG_LD_LIBRARY_PATH'),
+      }
+    end
+
     environment_variables = nil
     if reset_environment?
-      environment_variables = Fig::OperatingSystem.get_environment_variables({})
+      environment_variables = Fig::OperatingSystem.get_environment_variables(
+        initial_environment_variables || {},
+      )
+    elsif initial_environment_variables
+      environment_variables = Fig::OperatingSystem.get_environment_variables
+
+      initial_environment_variables.each_pair do
+        |key, value|
+
+        environment_variables[key] = value
+      end
     end
 
     @environment = Fig::RuntimeEnvironment.new(
