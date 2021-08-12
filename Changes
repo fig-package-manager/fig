@@ -1,17 +1,35 @@
-v1.27.24.beta.2 - 2021/8/12
+v1.27.25 - 2021/8/12
 
   Miscellaneous:
 
-  - Dump the explicit FIG_LD_LIBRARY_PATH handling and replace it with looking
-    for environment variables starting with "FIG_EXPORT_VARIABLE_".
+  - Now looks for environment variables that start with "FIG_EXPORT_VARIABLE_"
+    and exports those without the prefix to all running commands and options
+    such as "--get".  So, assuming no packages manipulate variable FOO, running
+
+      > FOO=direct FIG_EXPORT_VARIABLE_FOO=overridden fig --get FOO
+
+    will emit "overridden".  This is useful for writing wrappers for Fig that
+    save the values of environment variables that affect the Ruby runtime used
+    by Fig itself, e.g.
+
+      for variable in GEM_HOME GEM_PATH GEM_SKIP LD_LIBRARY_PATH RUBYLIB RUBYLIB_PREFIX RUBYOPT RUBYPATH RUBYSHELL
+      do
+        eval variable_value="\"\$$variable\""
+
+        if [[ -n $variable_value ]]
+        then
+          eval export "FIG_EXPORT_VARIABLE_$variable=\"$variable_value\""
+          unset $variable
+        fi
+      done
+
+v1.27.24.beta.2 - 2021/8/12
+
+  - Test release.
 
 v1.27.24.beta.1 - 2021/8/12
 
-  Miscellaneous:
-
-  - Allow specifying a FIG_LD_LIBRARY_PATH for the value that should be
-    available as LD_LIBRARY_PATH from Fig, in case the Fig runtime itself needs
-    to have its own version of LD_LIBRARY_PATH.
+  - Test release.
 
 v1.27.23 - 2021/8/3
 
