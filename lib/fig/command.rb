@@ -292,10 +292,15 @@ class Fig::Command
     end
 
     initial_environment_variables = nil
-    if ENV.has_key? 'FIG_LD_LIBRARY_PATH'
-      initial_environment_variables = {
-        'LD_LIBRARY_PATH' => ENV.delete('FIG_LD_LIBRARY_PATH'),
-      }
+    ENV.keys.each do
+      |variable_name|
+
+      if variable_name.start_with? 'FIG_EXPORT_VARIABLE_'
+        initial_environment_variables ||= {}
+
+        initial_environment_variables[ variable_name[20..-1] ] =
+          ENV.delete(variable_name)
+      end
     end
 
     environment_variables = nil
