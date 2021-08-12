@@ -1,3 +1,10 @@
+v1.27.24.beta.2 - 2021/8/12
+
+  Miscellaneous:
+
+  - Dump the explicit FIG_LD_LIBRARY_PATH handling and replace it with looking
+    for environment variables starting with "FIG_EXPORT_VARIABLE_".
+
 v1.27.24.beta.1 - 2021/8/12
 
   Miscellaneous:
