@@ -14,7 +14,7 @@ module Fig::Protocol
 
   # Determine whether we need to update something.  Returns nil to indicate
   # "don't know".
-  def path_up_to_date?(uri, path)
+  def path_up_to_date?(uri, path, prompt_for_login)
     return nil # Not implemented
   end
 
