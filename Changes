@@ -1,5 +1,8 @@
 v1.27.26 - 2022/5/26
 
+  Bug fix:
+
+  - Fixed up-to-dateness checking for unauthenticated protocols.
 
 v1.27.25 - 2021/8/12
 
