@@ -32,6 +32,8 @@ class Fig::Protocol::HTTP
         raise Fig::FileNotFoundError.new error.message, uri
       end
     end
+
+    return true
   end
 
   private
