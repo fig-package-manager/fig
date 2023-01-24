@@ -1,3 +1,9 @@
+v1.27.28 - 2023/1/24
+
+  Bug fix:
+
+  - Updated gems for Ruby 3 (specifically libarchive-static and net-ftp).
+
 v1.27.27 - 2022/6/15
 
   Bug fix:
