@@ -17,6 +17,9 @@ tmtags
 ## NetBeans
 nbproject
 
+## VSCode Dev Container
+.devcontainer
+
 ## PROJECT::GENERAL
 coverage
 rdoc
