@@ -9,7 +9,7 @@ GEM
     docile (1.4.0)
     ed25519 (1.3.0)
     highline (2.1.0)
-    libarchive-static (1.0.6)
+    libarchive-static (1.1.0)
     log4r (1.1.10)
     net-ftp (0.2.0)
       net-protocol
@@ -22,8 +22,11 @@ GEM
       net-ssh (>= 5.0.0, < 8.0.0)
     net-ssh (7.0.1)
     polyglot (0.3.5)
+    psych (5.1.0)
+      stringio
     rake (13.0.6)
-    rdoc (4.3.0)
+    rdoc (6.5.0)
+      psych (>= 4.0.0)
     rspec (3.12.0)
       rspec-core (~> 3.12.0)
       rspec-expectations (~> 3.12.0)
@@ -43,6 +46,7 @@ GEM
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.12.3)
     simplecov_json_formatter (0.1.4)
+    stringio (3.0.5)
     time (0.2.1)
       date
     timeout (0.3.1)
@@ -58,21 +62,21 @@ DEPENDENCIES
   colorize (>= 0.5.8)
   ed25519 (>= 1.2.4)
   highline (>= 1.6.19)
-  libarchive-static (>= 1.0.6)
+  libarchive-static (>= 1.1.0)
   log4r (>= 1.1.5)
   net-ftp (>= 0.1.3)
   net-netrc (>= 0.2.2)
   net-sftp (>= 2.1.2)
   net-ssh (>= 6.1.0)
   rake (>= 0.8.7)
-  rdoc (~> 4.3.0)
+  rdoc (>= 6.3.1)
   rspec (~> 3)
   simplecov (>= 0.6.2)
   simplecov-html (>= 0.5.3)
   treetop (>= 1.4.14)
 
 RUBY VERSION
-   ruby 3.1.3p185
+   ruby 3.1.2p20
 
 BUNDLED WITH
    2.3.26

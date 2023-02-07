@@ -20,13 +20,13 @@ gem 'bcrypt_pbkdf',      '>= 1.1.0'  # Required for ED25519 SSH keys
 gem 'colorize',          '>= 0.5.8'
 gem 'ed25519',           '>= 1.2.4'  # Required for ED25519 SSH keys
 gem 'highline',          '>= 1.6.19'
-gem 'libarchive-static', '>= 1.0.6'
+gem 'libarchive-static', '>= 1.1.0'
 gem 'log4r',             '>= 1.1.5'
 gem 'net-ftp',           '>= 0.1.3'
 gem 'net-netrc',         '>= 0.2.2'
 gem 'net-sftp',          '>= 2.1.2'
 gem 'net-ssh',           '>= 6.1.0'
-gem 'rdoc',              '~> 4.3.0'
+gem 'rdoc',              '>= 6.3.1'
 gem 'treetop',           '>= 1.4.14'
 
 group :development do
