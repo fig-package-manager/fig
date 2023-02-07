@@ -9,7 +9,7 @@ GEM
     docile (1.4.0)
     ed25519 (1.3.0)
     highline (2.1.0)
-    libarchive-static (1.0.6)
+    libarchive-static (1.1.0)
     log4r (1.1.10)
     net-ftp (0.2.0)
       net-protocol
@@ -58,7 +58,7 @@ DEPENDENCIES
   colorize (>= 0.5.8)
   ed25519 (>= 1.2.4)
   highline (>= 1.6.19)
-  libarchive-static (>= 1.0.6)
+  libarchive-static (>= 1.1.0)
   log4r (>= 1.1.5)
   net-ftp (>= 0.1.3)
   net-netrc (>= 0.2.2)
@@ -72,7 +72,7 @@ DEPENDENCIES
   treetop (>= 1.4.14)
 
 RUBY VERSION
-   ruby 3.1.3p185
+   ruby 3.1.2p20
 
 BUNDLED WITH
    2.3.26
