@@ -61,7 +61,7 @@ class Fig::FigRC
 
   def self.handle_figrc(configuration)
     user_figrc_path = File.expand_path('~/.figrc')
-    return if not File.exists? user_figrc_path
+    return if not File.exist? user_figrc_path
 
     begin
       configuration_text = File::open(user_figrc_path).read

@@ -221,7 +221,7 @@ class Fig::OperatingSystem
   def unpack_archive(directory, archive_path)
     FileUtils.mkdir_p directory
     Dir.chdir(directory) do
-      if ! File.exists? archive_path
+      if ! File.exist? archive_path
         raise Fig::RepositoryError.new "#{archive_path} does not exist."
       end
 

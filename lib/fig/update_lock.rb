@@ -63,7 +63,7 @@ class Fig::UpdateLock
 
     # Yes, there's a race condition here, but with the way Windows file locking
     # works, it's better than a boot to the head.
-    if ! File.exists? lock_file
+    if ! File.exist? lock_file
       created_file = File.new(lock_file, 'w')
       created_file.close
     end

@@ -354,7 +354,7 @@ class Fig::Repository
     FileUtils.mv temporary_package, package_directory
 
     runtime_directory = package.runtime_directory
-    if File.exists? temporary_runtime
+    if File.exist? temporary_runtime
       FileUtils.mkdir_p File.dirname(runtime_directory)
       FileUtils.mv temporary_runtime, runtime_directory
     else
