@@ -2,14 +2,30 @@ GEM
   remote: http://rubygems.org/
   specs:
     Platform (0.4.2)
-    bcrypt_pbkdf (1.1.0)
-    colorize (0.8.1)
-    date (3.3.3)
-    diff-lcs (1.5.0)
-    docile (1.4.0)
+    bcrypt_pbkdf (1.1.1)
+    bcrypt_pbkdf (1.1.1-arm64-darwin)
+    colorize (1.1.0)
+    date (3.4.0)
+    diff-lcs (1.5.1)
+    docile (1.4.1)
     ed25519 (1.3.0)
-    highline (2.1.0)
-    libarchive-static (1.1.0)
+    ffi (1.17.0-arm64-darwin)
+    ffi (1.17.0-x86_64-linux-gnu)
+    ffi-libarchive (1.1.14)
+      ffi (~> 1.0)
+    ffi-libarchive-binary (0.3.0-arm64-darwin)
+      bundler (~> 2.3, >= 2.3.22)
+      ffi (~> 1.0)
+      ffi-libarchive (~> 1.0)
+      rake (~> 13.0)
+    ffi-libarchive-binary (0.3.0-x86_64-linux)
+      bundler (~> 2.3, >= 2.3.22)
+      ffi (~> 1.0)
+      ffi-libarchive (~> 1.0)
+      rake (~> 13.0)
+    highline (3.1.1)
+      reline
+    io-console (0.7.2)
     log4r (1.1.10)
     net-ftp (0.2.0)
       net-protocol
@@ -24,6 +40,8 @@ GEM
     polyglot (0.3.5)
     rake (13.0.6)
     rdoc (6.3.3)
+    reline (0.5.7)
+      io-console (~> 0.5)
     rspec (3.12.0)
       rspec-core (~> 3.12.0)
       rspec-expectations (~> 3.12.0)
@@ -50,6 +68,7 @@ GEM
       polyglot (~> 0.3)
 
 PLATFORMS
+  arm64-darwin-22
   x86_64-linux
 
 DEPENDENCIES
@@ -57,8 +76,8 @@ DEPENDENCIES
   bundler (>= 1.0.15)
   colorize (>= 0.5.8)
   ed25519 (>= 1.2.4)
+  ffi-libarchive-binary (~> 0.3.0)
   highline (>= 1.6.19)
-  libarchive-static (>= 1.1.0)
   log4r (>= 1.1.5)
   net-ftp (>= 0.1.3)
   net-netrc (>= 0.2.2)
@@ -66,6 +85,7 @@ DEPENDENCIES
   net-ssh (>= 6.1.0)
   rake (>= 0.8.7)
   rdoc (>= 6.3.1)
+  reline (= 0.5.7)
   rspec (~> 3)
   simplecov (>= 0.6.2)
   simplecov-html (>= 0.5.3)

@@ -4,7 +4,7 @@ require 'cgi'
 require 'fileutils'
 # Must specify absolute path of ::Archive when using
 # this module to avoid conflicts with Fig::Statement::Archive
-require 'libarchive_ruby'
+require 'ffi-libarchive-binary'
 require 'rbconfig'
 require 'set'
 
