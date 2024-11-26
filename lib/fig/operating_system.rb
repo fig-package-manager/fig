@@ -7,6 +7,8 @@ require 'fileutils'
 require 'ffi-libarchive-binary'
 require 'rbconfig'
 require 'set'
+require 'zlib'
+require 'rubygems/package'
 
 require 'fig/at_exit'
 require 'fig/environment_variables/case_insensitive'
@@ -204,11 +206,11 @@ class Fig::OperatingSystem
     existing_files = Set.new
 
     # TODO: Need to verify files_to_archive exists.
-    ::Archive.write_open_filename(
-      archive_name, ::Archive::COMPRESSION_GZIP, ::Archive::FORMAT_TAR
-    ) do |writer|
-      paths_to_archive.each do |path|
-        add_path_to_archive(path, existing_files, writer)
+    Zlib::GzipWriter.open(archive_name) do |gz|
+      Gem::Package::TarWriter.new(gz) do |writer|
+        paths_to_archive.each do |path|
+          add_path_to_archive(path, existing_files, writer)
+        end
       end
     end
   end
@@ -301,22 +303,18 @@ class Fig::OperatingSystem
     return if existing_files.include? cleaned_path
 
     children = []
-    archive_writer.new_entry do
-      |entry|
 
-      entry.copy_lstat(cleaned_path)
-      entry.pathname = path
-      if entry.symbolic_link?
-        linked = File.readlink(path)
-        entry.symlink = linked
+    stat = File.lstat(path)
+    if stat.symlink?
+      archive_writer.add_symlink(path, File.readlink(path), stat.mode)
+    elsif stat.file?
+      archive_writer.add_file_simple(path, stat.mode, stat.size) do |dst_io|
+        File.open path, "rb" do |src_io|
+          IO.copy_stream(src_io, dst_io)
+        end
       end
-      archive_writer.write_header(entry)
-
-      if entry.regular?
-        archive_writer.write_data(open(path) {|f| f.binmode; f.read })
-      elsif entry.directory?
-        children = Dir.entries(path) - ['.', '..']
-      end
+    elsif stat.directory?
+      children = Dir.entries(path) - ['.', '..']
     end
 
     existing_files << cleaned_path
