@@ -1,0 +1,64 @@
+name: build-and-test
+
+on:
+  push:
+    branches: [ "*" ]
+    tags: [ "v*" ]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.job }}-${{ github.head_ref || github.ref_name }}'
+  cancel-in-progress: true
+
+env:
+  BUNDLER_VER: 2.3.26
+
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: x64-mingw32
+            ruby: '3.1.2'
+          - os: windows-latest
+            platform: x64-mingw-ucrt
+            ruby: '3.1.2'
+          - os: macos-latest
+            platform: x86_64-darwin
+            ruby: '3.1.2'
+          - os: macos-latest
+            platform: arm64-darwin
+            ruby: '3.1.2'
+          - os: ubuntu-latest
+            platform: x86_64-linux
+            ruby: '3.1.2'
+          - os: ubuntu-latest
+            platform: any
+            ruby: '3.1.2'
+          - os: centos7.5
+            platform: x86_64-linux
+            ruby: '3.1.2'
+            
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler: ${{ env.BUNDLER_VER }}
+          bundler-cache: true
+
+      - name: Install gem dependencies
+        run: bundle install
+
+      - name: Run tests
+        run: bundle exec rspec
+        
+      - name: Build the gem
+        run: bundle exec rake gem
+
