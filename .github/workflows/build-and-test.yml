@@ -54,6 +54,10 @@ jobs:
           bundler-cache: true
 
       - name: Install gem dependencies
+        env:
+          CC: false
+          LD: false
+          CXX: false
         run: bundle install
 
       - name: Run tests
