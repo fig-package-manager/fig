@@ -47,8 +47,6 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
-          bundler: ${{ env.BUNDLER_VER }}
-          bundler-cache: true
 
       - name: Install gem dependencies
         env:
