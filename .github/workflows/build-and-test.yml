@@ -57,7 +57,7 @@ jobs:
         run: bundle install
 
       - name: Run tests
-        run: bundle exec rspec
+        run: bundle exec rake rspec
         
       - name: Build the gem
         run: bundle exec rake gem
