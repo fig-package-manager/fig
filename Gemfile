@@ -28,6 +28,7 @@ gem 'net-sftp',          '>= 2.1.2'
 gem 'net-ssh',           '>= 6.1.0'
 gem 'rdoc',              '>= 6.3.1'
 gem 'treetop',           '>= 1.4.14'
+gem 'base64',            '>= 0.1.1'
 
 group :development do
   gem 'bundler',            '>= 1.0.15'
