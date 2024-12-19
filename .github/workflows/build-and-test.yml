@@ -16,7 +16,7 @@ env:
 
 
 jobs:
-  test:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -64,6 +64,32 @@ jobs:
       - name: Run tests
         run: bundle exec rake rspec
         
-      - name: Build the gem
+      - name: Build gem
         run: bundle exec rake gem
 
+      - name: Upload gem
+        uses: actions/upload-artifact@v4
+        with:
+          name: fig
+          path: pkg/fig-*.gem
+
+  test-gem-installation-linux:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - centos:7
+          - ubuntu:20.04
+          - ubuntu:22.04
+          - ubuntu:24.04
+          - ubuntu:12.04
+    steps:
+      - name: Download gem
+        uses: actions/download-artifact@v4
+        with:
+          name: fig
+          path: .
+      - run: gem install ./fig-*.gem
