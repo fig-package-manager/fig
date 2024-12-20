@@ -116,10 +116,20 @@ jobs:
           - ubuntu:22.04
           - ubuntu:24.04
           - ubuntu:12.04
+        ruby:
+          - 3.1.2
+          - 3.3
     steps:
       - name: Download gem
         uses: actions/download-artifact@v4
         with:
           name: fig
           path: .
-      - run: gem install ./fig-*.gem
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+
+      - run: |
+          gem update --system $RUBYGEMS_VER
+          gem install ./fig-*.gem
