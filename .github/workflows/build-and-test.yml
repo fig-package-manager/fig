@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUNDLER_VER: 2.3.26
-
+  BUNDLER_VER: 2.6.1
+  RUBYGEMS_VER: 3.6.1
 
 jobs:
   build:
@@ -53,6 +53,8 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
+
+      - run: gem update --system $RUBYGEMS_VER
 
       - name: Install gem dependencies
         env:
