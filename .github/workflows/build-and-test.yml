@@ -111,7 +111,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - centos:7
+          - centos:7.9.2009
           - ubuntu:20.04
           - ubuntu:22.04
           - ubuntu:24.04
@@ -124,6 +124,18 @@ jobs:
         with:
           name: fig
           path: .
+
+      - name: Install packages required by setup-ruby action
+        run: |
+          case "${{ matrix.os }}" in
+          ubuntu*)
+            apt-get update
+            apt-get install -y libyaml-0-2
+            ;;
+          centos*)
+            yum install -y libyaml
+            ;;
+          esac
 
       - uses: ruby/setup-ruby@v1
         with:
