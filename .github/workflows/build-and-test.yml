@@ -77,7 +77,7 @@ jobs:
       matrix:
         ruby:
           - 3.1.2
-#          - 3.3
+
     steps:
       - uses: actions/checkout@v3
 
