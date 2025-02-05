@@ -130,7 +130,7 @@ jobs:
           case "${{ matrix.os }}" in
           ubuntu*)
             apt-get update
-            apt-get install -y libyaml-0-2
+            apt-get install -y libyaml-0-2 openssl
             ;;
           centos*)
             yum install -y libyaml
