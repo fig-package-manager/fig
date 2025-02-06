@@ -103,7 +103,39 @@ jobs:
           name: fig
           path: pkg/fig-*.gem
 
-  test-gem-installation-linux:
+# Need to figure out how to parameterize the common parts of
+# these jobs and factor out only the differing parts.
+  test-gem-installation-centos:
+    if: false
+    needs: package
+    runs-on: ubuntu-latest
+    container:
+      image: centos:7.9.2009
+    strategy:
+      matrix:
+        ruby:
+          - 3.1.2
+          - 3.3
+    steps:
+      - name: Download gem
+        uses: actions/download-artifact@v4
+        with:
+          name: fig
+          path: .
+
+      - name: Install packages required by setup-ruby action
+        run: |
+          yum install -y libyaml
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+
+      - run: |
+          gem update --system $RUBYGEMS_VER
+          gem install ./fig-*.gem
+
+  test-gem-installation-ubuntu:
     needs: package
     runs-on: ubuntu-latest
     container:
@@ -111,7 +143,6 @@ jobs:
     strategy:
       matrix:
         os:
-          - centos:7.9.2009
           - ubuntu:20.04
           - ubuntu:22.04
           - ubuntu:24.04
@@ -127,15 +158,8 @@ jobs:
 
       - name: Install packages required by setup-ruby action
         run: |
-          case "${{ matrix.os }}" in
-          ubuntu*)
-            apt-get update
-            apt-get install -y libyaml-0-2 openssl
-            ;;
-          centos*)
-            yum install -y libyaml
-            ;;
-          esac
+          apt-get update
+          apt-get install -y libyaml-0-2 openssl nodejs
 
       - uses: ruby/setup-ruby@v1
         with:
