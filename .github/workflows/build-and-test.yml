@@ -16,7 +16,7 @@ env:
   RUBYGEMS_VER: 3.6.1
 
 jobs:
-  build:
+  validate-no-compilation-required:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -71,7 +71,7 @@ jobs:
   #
   # and maybe we don't even need to package for each ruby version?
   package:
-    needs: build
+    needs: validate-no-compilation-required
     runs-on: ubuntu-latest
     strategy:
       matrix:
