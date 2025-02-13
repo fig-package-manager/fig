@@ -1,5 +1,6 @@
 # coding: utf-8
 
+# FIXME remove this check and rely on gem/bundler enforcement
 ( [2, 0, 0] <=> ( RUBY_VERSION.split(".").collect {|x| x.to_i} ) ) <= 0 or
   abort "Ruby v2.0.0 is required; this is v#{RUBY_VERSION}."
 
