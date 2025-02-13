@@ -671,7 +671,7 @@ class Fig::RepositoryPackagePublisher
           expansion_happened = true; published_package.runtime_directory
         }
 
-        if expansion_happened && ! File.exists?(expanded_value) && ! File.symlink?(expanded_value)
+        if expansion_happened && ! File.exist?(expanded_value) && ! File.symlink?(expanded_value)
           Fig::Logging.warn(
             %Q<The #{statement.name} variable points to a path that does not exist (#{expanded_value}); retrieve statements that are active when this package is included may fail.>
           )

@@ -1,3 +1,20 @@
+v2.0.0.beta.1 - 2025/2/3
+
+  Announcement:
+
+  - Fig now requires miminum of ruby 3.1.2.
+  - Switch libarchive backend from libarchive-static to ffi-libarchive-binary
+  - Use stdlib for typical package tarball creation.
+
+  Bug Fixes:
+
+  - Abandon use of deprecated APIs.
+
+  Miscellaneous:
+
+  - Add github CI support.
+  - Add build matrix for windows, mac, and linux.
+
 v1.27.29 - 2023/2/7
 
   Bug fix:

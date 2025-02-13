@@ -1,0 +1,170 @@
+name: build-and-test
+
+on:
+  push:
+    branches: [ "*" ]
+    tags: [ "v*" ]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.job }}-${{ github.head_ref || github.ref_name }}'
+  cancel-in-progress: true
+
+env:
+  BUNDLER_VER: 2.6.1
+  RUBYGEMS_VER: 3.6.1
+
+jobs:
+  validate-no-compilation-required:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-2022
+          - macos-14
+          - ubuntu-20.04
+          - ubuntu-22.04
+        ruby:
+          - 3.1.2
+          - 3.3
+        include:
+          - os: windows-2022
+            platform: x64-mingw32
+          - os: windows-2022
+            platform: x64-mingw-ucrt
+          - os: macos-14
+            platform: x86_64-darwin
+          - os: macos-14
+            platform: arm64-darwin
+          - os: ubuntu-22.04
+            platform: x86_64-linux
+          - os: ubuntu-22.04
+            platform: any
+          - os: ubuntu-20.04
+            platform: x86_64-linux
+          - os: ubuntu-20.04
+            platform: any
+            
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+
+      - run: gem update --system $RUBYGEMS_VER
+
+      - name: Install gem dependencies
+        env:
+          CC: false
+          LD: false
+          CXX: false
+        run: bundle install
+
+      - name: Run tests
+        run: bundle exec rake rspec
+
+  # since we are packaging a pure ruby gem, we only need to package
+  # once for each ruby version, not once on every platform.
+  #
+  # and maybe we don't even need to package for each ruby version?
+  package:
+    needs: validate-no-compilation-required
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ruby:
+          - 3.1.2
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+
+      - run: gem update --system $RUBYGEMS_VER
+
+      - name: Install gem dependencies
+        env:
+          CC: false
+          LD: false
+          CXX: false
+        run: bundle install
+
+      - name: Build gem
+        run: bundle exec rake gem
+
+      - name: Upload gem
+        uses: actions/upload-artifact@v4
+        with:
+          name: fig
+          path: pkg/fig-*.gem
+
+# Need to figure out how to parameterize the common parts of
+# these jobs and factor out only the differing parts.
+  test-gem-installation-centos:
+    if: false
+    needs: package
+    runs-on: ubuntu-latest
+    container:
+      image: centos:7.9.2009
+    strategy:
+      matrix:
+        ruby:
+          - 3.1.2
+          - 3.3
+    steps:
+      - name: Download gem
+        uses: actions/download-artifact@v4
+        with:
+          name: fig
+          path: .
+
+      - name: Install packages required by setup-ruby action
+        run: |
+          yum install -y libyaml
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+
+      - run: |
+          gem update --system $RUBYGEMS_VER
+          gem install ./fig-*.gem
+
+  test-gem-installation-ubuntu:
+    needs: package
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu:20.04
+          - ubuntu:22.04
+          - ubuntu:24.04
+        ruby:
+          - 3.1.2
+          - 3.3
+    steps:
+      - name: Install packages required by github actions
+        run: |
+          apt-get update
+          apt-get install -y libyaml-0-2 openssl nodejs
+
+      - name: Download gem
+        uses: actions/download-artifact@v4
+        with:
+          name: fig
+          path: .
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+
+      - run: |
+          gem update --system $RUBYGEMS_VER
+          gem install ./fig-*.gem

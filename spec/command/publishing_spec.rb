@@ -301,8 +301,8 @@ describe 'Fig' do
           end
         END
         fig(%w<--publish foo/1.2.3>, input)
-        fail unless File.exists? FIG_HOME + '/packages/foo/1.2.3/.fig'
-        fail unless File.exists? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail unless File.exist? FIG_HOME + '/packages/foo/1.2.3/.fig'
+        fail unless File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
         fig(%w<--update --include foo/1.2.3 --get FOO>)[0].should == 'SHEEP'
 
         input = <<-END
@@ -348,7 +348,7 @@ describe 'Fig' do
         fig(%w<--publish-local foo/1.2.3>, input)
 
         a_file_published = "#{FIG_HOME}/runtime/foo/1.2.3/a-file.txt"
-        fail unless File.exists? a_file_published
+        fail unless File.exist? a_file_published
 
         File.unlink a_file_unpublished
 
@@ -365,8 +365,8 @@ describe 'Fig' do
 
         another_file_published =
           "#{FIG_HOME}/runtime/foo/1.2.3/another-file.txt"
-        fail unless File.exists? another_file_published
-        fail if File.exists? a_file_published # This is the real test.
+        fail unless File.exist? another_file_published
+        fail if File.exist? a_file_published # This is the real test.
       end
 
       describe 'with both a package.fig file in the current directory and an environment variable option' do
@@ -496,8 +496,8 @@ describe 'Fig' do
           end
         END
         fig(%w<--publish foo/1.2.3>, input)
-        fail unless File.exists? FIG_HOME + '/packages/foo/1.2.3/.fig'
-        fail unless File.exists? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail unless File.exist? FIG_HOME + '/packages/foo/1.2.3/.fig'
+        fail unless File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
         fig(%w<--update --include foo/1.2.3 -- hello.bat>)[0].should == 'bar'
       end
 
@@ -508,8 +508,8 @@ describe 'Fig' do
           fail unless system "chmod +x #{CURRENT_DIRECTORY}/bin/hello.bat"
         end
         fig(%w<--publish foo/1.2.3 --resource bin/hello.bat --append PATH=@/bin>)
-        fail unless File.exists? FIG_HOME + '/packages/foo/1.2.3/.fig'
-        fail unless File.exists? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail unless File.exist? FIG_HOME + '/packages/foo/1.2.3/.fig'
+        fail unless File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
         fig(%w<--update --include foo/1.2.3 -- hello.bat>)[0].should == 'bar'
       end
 
@@ -529,7 +529,7 @@ describe 'Fig' do
             --append PATH=@/bin
           >
         )
-        fail if File.exists? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail if File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
         fig(
           %w<--update-if-missing --include foo/1.2.3 -- hello.bat>
         )[0].should == 'bar'
@@ -564,7 +564,7 @@ describe 'Fig' do
             --append PATH=@/bin
           >
         )
-        fail if File.exists? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail if File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
         fig(
           %w<
             --update-if-missing
@@ -586,7 +586,7 @@ describe 'Fig' do
             --append PATH=@/bin
           >
         )
-        fail if File.exists? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail if File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
         fig(%w<--update-if-missing --include foo/1.2.3 -- hello.bat>)[0].should ==
           'cheese'
       end

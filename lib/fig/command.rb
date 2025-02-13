@@ -1,5 +1,6 @@
 # coding: utf-8
 
+require 'bundler/setup'
 require 'fileutils'
 require 'net/ftp'
 require 'set'

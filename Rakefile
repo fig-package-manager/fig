@@ -46,7 +46,7 @@ def main()
       'Fig is a utility for configuring environments and managing dependencies across a team of developers.'
     gemspec.description =
       "Fig is a utility for configuring environments and managing dependencies across a team of developers. Given a list of packages and a command to run, Fig builds environment variables named in those packages (e.g., CLASSPATH), then executes the command in that environment. The caller's environment is not affected."
-    gemspec.license     = 'BSD'
+    gemspec.license     = 'BSD-3-Clause'
 
     add_dependencies(gemspec) # From inc/build_utilities above.
 
@@ -235,8 +235,8 @@ end
 
 def push_to_rubygems(version)
   print "Checking to see if pkg/fig-#{version}.gem exists... "
-  if File.exists?("pkg/fig-#{version}.gem")
-    puts 'File exists.'
+  if File.exist?("pkg/fig-#{version}.gem")
+    puts 'File exists'
     puts "Pushing pkg/fig-#{version}.gem to rubygems.org."
     puts %x{gem push pkg/fig-#{version}.gem 2>&1}
 

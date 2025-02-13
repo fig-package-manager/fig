@@ -503,7 +503,7 @@ class Fig::RuntimeEnvironment
   def check_source_existence(
     variable_name, variable_value, package, backtrace
   )
-    return if File.exists?(variable_value) || File.symlink?(variable_value)
+    return if File.exist?(variable_value) || File.symlink?(variable_value)
 
     raise_repository_error(
       %Q<In #{package}, the #{variable_name} variable points to a path that does not exist ("#{variable_value}", after expansion).>,

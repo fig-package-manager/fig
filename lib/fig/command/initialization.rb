@@ -3,6 +3,7 @@
 # This is not a normal module/class.  It contains code to be run by bin/fig and
 # bin/fig-debug just after process startup.
 
+# FIXME remove this check and rely on gem/bundler enforcement
 ( [2, 0, 0] <=> ( RUBY_VERSION.split(".").collect {|x| x.to_i} ) ) <= 0 or
   abort "Ruby v2.0.0 is required; this is v#{RUBY_VERSION}."
 
