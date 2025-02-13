@@ -236,7 +236,7 @@ end
 def push_to_rubygems(version)
   print "Checking to see if pkg/fig-#{version}.gem exists... "
   if File.exist?("pkg/fig-#{version}.gem")
-    puts 'File.exist.'
+    puts 'File exists'
     puts "Pushing pkg/fig-#{version}.gem to rubygems.org."
     puts %x{gem push pkg/fig-#{version}.gem 2>&1}
 
