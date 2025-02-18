@@ -10,16 +10,30 @@ require 'rubygems'
 require 'rubygems/package_task'
 require 'treetop'
 
-require File.join(File.dirname(__FILE__), 'inc', 'build_utilities.rb')
-
 include FileUtils
 
+treetop_grammars  = FileList['lib/fig/**/*.treetop']
+compiled_grammars = treetop_grammars.ext('rb')
+
+def load_gemspec(specname = 'fig.gemspec')
+  spec = Gem::Specification.load(specname)
+
+  spec.files = FileList[
+    * %w[
+         BUGS.md
+         Changes
+         bin/*
+         lib/**/*
+         LICENSE
+         README.md
+         ]
+  ].to_a + compiled_grammars
+
+  spec
+end
 
 def main()
   task :default => :rspec
-
-  treetop_grammars  = FileList['lib/fig/**/*.treetop']
-  compiled_grammars = treetop_grammars.ext('rb')
 
   rule '.rb' => '.treetop' do
     |task|
@@ -35,35 +49,8 @@ def main()
   task :simplecov => [:treetop]
 
 
-  fig_gemspec = Gem::Specification.new do |gemspec|
-    gemspec.name        = 'fig'
-    gemspec.email       = 'git@foemmel.com'
-    gemspec.homepage    = 'http://github.com/fig-package-manager/fig'
-    gemspec.authors     = ['Matthew Foemmel']
-    gemspec.platform    = Gem::Platform::RUBY
-    gemspec.version     = get_version
-    gemspec.summary     =
-      'Fig is a utility for configuring environments and managing dependencies across a team of developers.'
-    gemspec.description =
-      "Fig is a utility for configuring environments and managing dependencies across a team of developers. Given a list of packages and a command to run, Fig builds environment variables named in those packages (e.g., CLASSPATH), then executes the command in that environment. The caller's environment is not affected."
-    gemspec.license     = 'BSD-3-Clause'
-
-    add_dependencies(gemspec) # From inc/build_utilities above.
-
-    gemspec.files = FileList[
-      * %w<
-        BUGS.md
-        Changes
-        bin/*
-        lib/**/*
-        LICENSE
-        README.md
-      >
-    ].to_a + compiled_grammars
-
-    gemspec.executables = ['fig']
-  end
-
+  fig_gemspec = load_gemspec
+  
   Gem::PackageTask.new(fig_gemspec).define
 
   desc 'Alias for the gem task.'
