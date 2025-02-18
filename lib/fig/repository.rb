@@ -5,7 +5,6 @@ require 'set'
 require 'socket'
 require 'tmpdir'
 
-require 'fig'
 require 'fig/at_exit'
 require 'fig/file_not_found_error'
 require 'fig/logging'
