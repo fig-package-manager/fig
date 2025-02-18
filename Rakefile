@@ -13,7 +13,7 @@ require 'treetop'
 include FileUtils
 
 treetop_grammars  = FileList['lib/fig/**/*.treetop']
-compiled_grammars = treetop_grammars.ext('rb')
+COMPILED_GRAMMARS = treetop_grammars.ext('rb')
 
 def load_gemspec(specname = 'fig.gemspec')
   spec = Gem::Specification.load(specname)
@@ -27,7 +27,7 @@ def load_gemspec(specname = 'fig.gemspec')
          LICENSE
          README.md
          ]
-  ].to_a + compiled_grammars
+  ].to_a + COMPILED_GRAMMARS
 
   spec
 end
@@ -43,7 +43,7 @@ def main()
   end
 
   desc 'Compile Treetop grammars'
-  task :treetop   => compiled_grammars
+  task :treetop   => COMPILED_GRAMMARS
   task :gem       => [:treetop]
   task :rspec     => [:treetop]
   task :simplecov => [:treetop]
@@ -119,7 +119,7 @@ def main()
   task :clean do
     [
       %w[ coverage coverage.zip pkg rdoc resources.tar.gz spec/runtime-work ],
-      compiled_grammars
+      COMPILED_GRAMMARS
     ].flatten.each do
       |path|
       rm_rf "./#{path}"
