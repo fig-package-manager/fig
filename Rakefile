@@ -98,7 +98,8 @@ def main()
   desc 'Tag the release, push the tag to the "origin" remote repository, and publish the rubygem to rubygems.org.'
   task :publish do
     if local_repo_up_to_date?
-      version = get_version
+      require_relative 'lib/fig/version'
+      version = Foo::VERSION
       if push_to_rubygems(version)
         tag_and_push_to_git(version)
       end
@@ -108,7 +109,7 @@ def main()
 
   RDoc::Task.new do |rdoc|
     rdoc.rdoc_dir = 'rdoc'
-    rdoc.title = "fig #{get_version}"
+    rdoc.title = "fig #{Fig::VERSION}"
     rdoc.rdoc_files.include('README*')
     rdoc.rdoc_files.include('lib/**/*.rb')
   end
@@ -140,12 +141,6 @@ def main()
   return
 end
 
-
-def get_version
-  require File.join(File.dirname(__FILE__), 'lib', 'fig.rb')
-
-  return Fig::VERSION
-end
 
 def git_working_directory_clean?
   return %x<git ls-files --deleted --modified --others --exclude-standard> == ''

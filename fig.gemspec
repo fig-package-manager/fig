@@ -1,9 +1,11 @@
 require 'rake'
 require 'rake/file_list'
 
+require_relative 'lib/fig/version'
+
 Gem::Specification.new do |spec|
   spec.name = 'fig'
-  spec.version = get_version
+  spec.version = Fig::VERSION
   spec.email = 'maintainer@figpackagemanager.org'
   spec.authors = 'Fig Folks'
   spec.platform = Gem::Platform::RUBY
