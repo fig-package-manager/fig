@@ -89,7 +89,7 @@ def main()
   task :simplecov_archive do
     Dir.chdir('coverage') do
       create_zip(
-        '../coverage.zip', Dir.entries('.') - %w< . .. .resultset.json >
+        '../coverage.zip', Dir.entries('.') - %w[ . .. .resultset.json ]
       )
     end
   end
@@ -117,7 +117,7 @@ def main()
   desc 'Remove build products and temporary files.'
   task :clean do
     [
-      %w< coverage coverage.zip pkg rdoc resources.tar.gz spec/runtime-work >,
+      %w[ coverage coverage.zip pkg rdoc resources.tar.gz spec/runtime-work ],
       compiled_grammars
     ].flatten.each do
       |path|
@@ -127,14 +127,14 @@ def main()
 
   desc 'Create tags files for editors using ctags.'
   task :ctags do
-    system 'ctags', * %w<
+    system 'ctags', * %w[
       --exclude=lib/fig/grammar/*.rb
       --extra=+f
       --fields=+afikKlmnsSzt
       --langmap=ruby:+.treetop
       --recurse
       --totals
-    >
+    ]
   end
 
   return
