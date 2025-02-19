@@ -1,6 +1,4 @@
-require 'rake'
-require 'rake/file_list'
-
+# coding: utf-8
 require_relative 'lib/fig/version'
 
 Gem::Specification.new do |spec|

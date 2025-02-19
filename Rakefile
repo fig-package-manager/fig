@@ -1,9 +1,5 @@
 # coding: utf-8
-
 require 'fileutils'
-# Uncomment this if code in create_zip() gets uncommented.
-# require 'libarchive_ruby'
-require 'rake'
 require 'rdoc/task'
 require 'rspec/core/rake_task'
 require 'rubygems'
