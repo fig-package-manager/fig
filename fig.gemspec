@@ -31,8 +31,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'treetop',           '>= 1.4.14'
   spec.add_dependency 'base64', '>= 0.1.1'
   spec.add_dependency 'stringio', '>= 3.1.1'
+  spec.add_dependency 'bundler',         '>= 2.6.1'
 
-  spec.add_development_dependency 'bundler',         '>= 2.6.1'
   spec.add_development_dependency 'rake',            '~> 13.0'
   spec.add_development_dependency 'rspec',           '~> 3'
   spec.add_development_dependency 'simplecov',       '>= 0.6.2'

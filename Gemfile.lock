@@ -4,6 +4,7 @@ PATH
     fig (2.0.0.beta.1)
       base64 (>= 0.1.1)
       bcrypt_pbkdf (>= 1.1.0)
+      bundler (>= 2.6.1)
       colorize (>= 0.5.8)
       ed25519 (>= 1.2.4)
       ffi-libarchive-binary (~> 0.3.0)
@@ -109,7 +110,6 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  bundler (>= 2.6.1)
   fig!
   rake (~> 13.0)
   rspec (~> 3)
