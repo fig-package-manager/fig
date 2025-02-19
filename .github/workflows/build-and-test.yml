@@ -153,7 +153,7 @@ jobs:
       - name: Install packages required by github actions
         run: |
           apt-get update
-          apt-get install -y libyaml-0-2 openssl nodejs
+          apt-get install -y libyaml-0-2 openssl nodejs make
 
       - name: Download gem
         uses: actions/download-artifact@v4
