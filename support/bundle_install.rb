@@ -1,5 +1,6 @@
 require 'bundler'
 require 'stringio'
+require 'rbconfig'
 
 # capture standard output
 def capture_stdout
@@ -11,11 +12,21 @@ ensure
   $stdout = orig_stdout
 end
 
+def override_toolchain_from_env(tools=%w[ CC CPP CXX LD AS ])
+  tools.each do |tool|
+    if ENV.key?(tool)
+      RbConfig::MAKEFILE_CONFIG[tool] = ENV[tool]
+      puts "Injecting #{tool}=#{ENV[tool]} from environment."
+    end
+  end
+end
+
 def install_and_capture_native_gems
   native_gems = []
 
   out = capture_stdout do
     begin
+      override_toolchain_from_env
       Bundler.reset!
       bundle_def = Bundler::Definition.build('Gemfile', 'Gemfile.lock', nil)
       installer = Bundler::Installer.install(Bundler.root, bundle_def)
