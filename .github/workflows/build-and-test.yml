@@ -64,6 +64,8 @@ jobs:
         run: ruby ./support/bundle_install.rb
 
       - name: Run tests
+        env:
+          FIG_SVN_EXECUTABLE: 
         run: bundle exec rake rspec
 
   # since we are packaging a pure ruby gem, we only need to package
