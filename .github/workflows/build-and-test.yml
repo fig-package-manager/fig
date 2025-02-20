@@ -16,7 +16,7 @@ env:
   RUBYGEMS_VER: 3.6.1
 
 jobs:
-  validate-no-compilation-required:
+  detect-native-gems:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -56,12 +56,12 @@ jobs:
 
       - run: gem update --system $RUBYGEMS_VER
 
-      - name: Install gem dependencies
+      - name: Install gem dependencies and report native extensions
         env:
           CC: false
           LD: false
           CXX: false
-        run: bundle install
+        run: ruby ./support/bundle_install.rb
 
       - name: Run tests
         run: bundle exec rake rspec
@@ -71,7 +71,7 @@ jobs:
   #
   # and maybe we don't even need to package for each ruby version?
   package:
-    needs: validate-no-compilation-required
+    needs: detect-native-gems
     runs-on: ubuntu-latest
     strategy:
       matrix:
