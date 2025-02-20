@@ -150,10 +150,10 @@ jobs:
           - 3.1.2
           - 3.3
     steps:
-      - name: Install packages required by github actions
+      - name: Install packages required by github actions and ruby itself
         run: |
           apt-get update
-          apt-get install -y libyaml-0-2 openssl nodejs make
+          apt-get install -y libyaml-0-2 openssl nodejs build-essential
 
       - name: Download gem
         uses: actions/download-artifact@v4
