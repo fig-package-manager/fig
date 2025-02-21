@@ -11,8 +11,6 @@ ensure
   $stdout, $stderr = orig_stdout, orig_stderr
 end
 
-
-
 def install_and_capture_native_gems
   native_gems = []
 
