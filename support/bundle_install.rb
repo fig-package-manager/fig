@@ -1,15 +1,5 @@
 require 'bundler'
 require 'stringio'
-require 'rbconfig'
-
-def override_toolchain_from_env(tools=%w[ CC CPP CXX LD AS ])
-  tools.each do |tool|
-    if ENV.key?(tool)
-      RbConfig::MAKEFILE_CONFIG[tool] = ENV[tool]
-      puts "Injecting #{tool}=#{ENV[tool]} from environment."
-    end
-  end
-end
 
 # capture stdout & stderr
 def capture_output
