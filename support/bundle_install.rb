@@ -49,8 +49,9 @@ native_gems, installer_output = install_and_capture_native_gems
 
 puts installer_output
 
+puts "\n\nGems with native extensions:"
 if native_gems.empty?
   puts 'No native gems.'
 else
-  native_gems.each { |gem| puts gem[:name] }
+  native_gems.each { |gem| puts "  #{gem[:name]}" }
 end
