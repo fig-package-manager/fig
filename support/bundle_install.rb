@@ -2,16 +2,6 @@ require 'bundler'
 require 'stringio'
 require 'rbconfig'
 
-# capture standard output
-def capture_stdout
-  orig_stdout = $stdout
-  $stdout = StringIO.new
-  yield
-  $stdout.string
-ensure
-  $stdout = orig_stdout
-end
-
 def override_toolchain_from_env(tools=%w[ CC CPP CXX LD AS ])
   tools.each do |tool|
     if ENV.key?(tool)
@@ -21,19 +11,31 @@ def override_toolchain_from_env(tools=%w[ CC CPP CXX LD AS ])
   end
 end
 
+# capture stdout & stderr
+def capture_output
+  orig_stdout, orig_stderr = $stdout, $stderr
+  $stderr = $stdout = StringIO.new
+  yield
+  $stdout.string
+ensure
+  $stdout, $stderr = orig_stdout, orig_stderr
+end
+
+
+
 def install_and_capture_native_gems
   native_gems = []
 
-  out = capture_stdout do
-    begin
-      override_toolchain_from_env
+  out = ""
+  begin
+    out = capture_output do
       Bundler.reset!
       bundle_def = Bundler::Definition.build('Gemfile', 'Gemfile.lock', nil)
       installer = Bundler::Installer.install(Bundler.root, bundle_def)
-    rescue Bundler::BundlerError => e
-      puts e.message
-      exit 1
     end
+  rescue Bundler::BundlerError => e
+      puts "Bundler error: #{e.message}"
+      exit 1
   end
 
   out.each_line do |line|
@@ -49,7 +51,7 @@ native_gems, installer_output = install_and_capture_native_gems
 
 puts installer_output
 
-puts "\n\nGems with native extensions:"
+puts "\n\nGems that required compilation at install time:"
 if native_gems.empty?
   puts 'No native gems.'
 else
