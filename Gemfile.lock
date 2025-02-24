@@ -15,7 +15,6 @@ PATH
       net-netrc (>= 0.2.2)
       net-sftp (>= 2.1.2)
       net-ssh (>= 6.1.0)
-      rdoc (>= 6.3.1)
       stringio (>= 3.1.1)
       treetop (>= 1.4.14)
 
@@ -110,6 +109,7 @@ PLATFORMS
 DEPENDENCIES
   fig!
   rake (~> 13.0)
+  rdoc (>= 6.3.1)
   rspec (~> 3)
   simplecov (>= 0.6.2)
   simplecov-html (>= 0.5.3)
