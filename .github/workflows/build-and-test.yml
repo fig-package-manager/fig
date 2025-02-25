@@ -16,7 +16,7 @@ env:
   RUBYGEMS_VER: 3.6.1
 
 jobs:
-  validate-no-compilation-required:
+  detect-native-gems:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -56,14 +56,16 @@ jobs:
 
       - run: gem update --system $RUBYGEMS_VER
 
-      - name: Install gem dependencies
+      - name: Install gem dependencies and report native extensions
         env:
           CC: false
           LD: false
           CXX: false
-        run: bundle install
+        run: ruby ./support/bundle_install.rb
 
       - name: Run tests
+        env:
+          FIG_SVN_EXECUTABLE: 
         run: bundle exec rake rspec
 
   # since we are packaging a pure ruby gem, we only need to package
@@ -71,7 +73,7 @@ jobs:
   #
   # and maybe we don't even need to package for each ruby version?
   package:
-    needs: validate-no-compilation-required
+    needs: detect-native-gems
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -150,10 +152,13 @@ jobs:
           - 3.1.2
           - 3.3
     steps:
-      - name: Install packages required by github actions
+      - name: Install packages required by github actions and ruby itself
+        # ensure apt-get doesn't stop to ask questions
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
           apt-get update
-          apt-get install -y libyaml-0-2 openssl nodejs
+          apt-get install -y libyaml-0-2 openssl nodejs build-essential
 
       - name: Download gem
         uses: actions/download-artifact@v4

@@ -6,7 +6,7 @@ require 'set'
 require 'socket'
 require 'tmpdir'
 
-require 'fig'
+require 'fig/version'
 require 'fig/at_exit'
 require 'fig/external_program'
 require 'fig/file_not_found_error'

@@ -1,25 +1,35 @@
 # coding: utf-8
-
 require 'fileutils'
-# Uncomment this if code in create_zip() gets uncommented.
-# require 'libarchive_ruby'
-require 'rake'
 require 'rdoc/task'
 require 'rspec/core/rake_task'
 require 'rubygems'
 require 'rubygems/package_task'
 require 'treetop'
 
-require File.join(File.dirname(__FILE__), 'inc', 'build_utilities.rb')
-
 include FileUtils
 
+treetop_grammars  = FileList['lib/fig/**/*.treetop']
+COMPILED_GRAMMARS = treetop_grammars.ext('rb')
+
+def load_gemspec(specname = 'fig.gemspec')
+  spec = Gem::Specification.load(specname)
+
+  spec.files = FileList[
+    * %w[
+         BUGS.md
+         Changes
+         bin/*
+         lib/**/*
+         LICENSE
+         README.md
+         ]
+  ].to_a + COMPILED_GRAMMARS
+
+  spec
+end
 
 def main()
   task :default => :rspec
-
-  treetop_grammars  = FileList['lib/fig/**/*.treetop']
-  compiled_grammars = treetop_grammars.ext('rb')
 
   rule '.rb' => '.treetop' do
     |task|
@@ -29,41 +39,14 @@ def main()
   end
 
   desc 'Compile Treetop grammars'
-  task :treetop   => compiled_grammars
+  task :treetop   => COMPILED_GRAMMARS
   task :gem       => [:treetop]
   task :rspec     => [:treetop]
   task :simplecov => [:treetop]
 
 
-  fig_gemspec = Gem::Specification.new do |gemspec|
-    gemspec.name        = 'fig'
-    gemspec.email       = 'git@foemmel.com'
-    gemspec.homepage    = 'http://github.com/fig-package-manager/fig'
-    gemspec.authors     = ['Matthew Foemmel']
-    gemspec.platform    = Gem::Platform::RUBY
-    gemspec.version     = get_version
-    gemspec.summary     =
-      'Fig is a utility for configuring environments and managing dependencies across a team of developers.'
-    gemspec.description =
-      "Fig is a utility for configuring environments and managing dependencies across a team of developers. Given a list of packages and a command to run, Fig builds environment variables named in those packages (e.g., CLASSPATH), then executes the command in that environment. The caller's environment is not affected."
-    gemspec.license     = 'BSD-3-Clause'
-
-    add_dependencies(gemspec) # From inc/build_utilities above.
-
-    gemspec.files = FileList[
-      * %w<
-        BUGS.md
-        Changes
-        bin/*
-        lib/**/*
-        LICENSE
-        README.md
-      >
-    ].to_a + compiled_grammars
-
-    gemspec.executables = ['fig']
-  end
-
+  fig_gemspec = load_gemspec
+  
   Gem::PackageTask.new(fig_gemspec).define
 
   desc 'Alias for the gem task.'
@@ -102,7 +85,7 @@ def main()
   task :simplecov_archive do
     Dir.chdir('coverage') do
       create_zip(
-        '../coverage.zip', Dir.entries('.') - %w< . .. .resultset.json >
+        '../coverage.zip', Dir.entries('.') - %w[ . .. .resultset.json ]
       )
     end
   end
@@ -111,7 +94,8 @@ def main()
   desc 'Tag the release, push the tag to the "origin" remote repository, and publish the rubygem to rubygems.org.'
   task :publish do
     if local_repo_up_to_date?
-      version = get_version
+      require_relative 'lib/fig/version'
+      version = Foo::VERSION
       if push_to_rubygems(version)
         tag_and_push_to_git(version)
       end
@@ -121,7 +105,7 @@ def main()
 
   RDoc::Task.new do |rdoc|
     rdoc.rdoc_dir = 'rdoc'
-    rdoc.title = "fig #{get_version}"
+    rdoc.title = "fig #{Fig::VERSION}"
     rdoc.rdoc_files.include('README*')
     rdoc.rdoc_files.include('lib/**/*.rb')
   end
@@ -130,8 +114,8 @@ def main()
   desc 'Remove build products and temporary files.'
   task :clean do
     [
-      %w< coverage coverage.zip pkg rdoc resources.tar.gz spec/runtime-work >,
-      compiled_grammars
+      %w[ coverage coverage.zip pkg rdoc resources.tar.gz spec/runtime-work ],
+      COMPILED_GRAMMARS
     ].flatten.each do
       |path|
       rm_rf "./#{path}"
@@ -140,25 +124,19 @@ def main()
 
   desc 'Create tags files for editors using ctags.'
   task :ctags do
-    system 'ctags', * %w<
+    system 'ctags', * %w[
       --exclude=lib/fig/grammar/*.rb
       --extra=+f
       --fields=+afikKlmnsSzt
       --langmap=ruby:+.treetop
       --recurse
       --totals
-    >
+    ]
   end
 
   return
 end
 
-
-def get_version
-  require File.join(File.dirname(__FILE__), 'lib', 'fig.rb')
-
-  return Fig::VERSION
-end
 
 def git_working_directory_clean?
   return %x<git ls-files --deleted --modified --others --exclude-standard> == ''
