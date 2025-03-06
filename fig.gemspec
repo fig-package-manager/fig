@@ -1,5 +1,6 @@
 # coding: utf-8
 require_relative 'lib/fig/version'
+require_relative 'lib/git_helper'
 
 Gem::Specification.new do |spec|
   spec.name = 'fig'
@@ -15,6 +16,15 @@ Gem::Specification.new do |spec|
     'Utility for configuring environments and managing dependencies across a team of developers.'
   spec.description =
     "Fig is a utility for configuring environments and managing dependencies across a team of developers. Given a list of packages and a command to run, Fig builds environment variables named in those packages (e.g., CLASSPATH), then executes the command in that environment. The caller's environment is not affected."
+
+  sha1 = GitHelper.sha1
+  if sha1
+    spec.metadata['git_sha'] = sha1
+    
+    built = "Built from git SHA1: #{sha1}"
+    spec.summary += " #{built}"
+    spec.description += "\n\n#{built}"
+  end
 
   spec.add_dependency 'bcrypt_pbkdf', '~> 1.1.0'
   spec.add_dependency 'colorize',          '~> 1.1.0'
