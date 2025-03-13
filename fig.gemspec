@@ -49,6 +49,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'simplecov-html',  '~> 0.13.0'
 
   spec.executables = ['fig']
+  spec.require_paths = ['lib']
 
   # spec.files gets computed in Rakefile after loading
   # because we have generated files.
