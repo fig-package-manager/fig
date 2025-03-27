@@ -15,6 +15,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify version matches tag
+        run: |
+          # Extract version from version.rb
+          RUBY_VERSION=$(grep -o "VERSION = '.*'" lib/fig/version.rb | cut -d"'" -f2)
+          # Extract version from git tag (remove 'v' prefix)
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          
+          echo "Version in version.rb: $RUBY_VERSION"
+          echo "Version from git tag: $TAG_VERSION"
+          
+          if [ "$RUBY_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch! version.rb ($RUBY_VERSION) does not match git tag ($TAG_VERSION)"
+            exit 1
+          fi
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
