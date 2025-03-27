@@ -1,0 +1,74 @@
+name: publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler: '2.6.1'
+          rubygems: '3.6.1'
+          bundler-cache: true
+
+      - name: Build gem
+        run: |
+          gem build *.gemspec
+          mkdir -p pkg/
+          mv *.gem pkg/
+
+      # Extract version from the gem file for release tagging
+      - name: Get gem version
+        id: gem-version
+        run: |
+          GEM_VERSION=$(ls pkg/*.gem | sed 's/.*-\([0-9.]\+\)\.gem/\1/')
+          echo "version=${GEM_VERSION}" >> "$GITHUB_OUTPUT"
+
+      # Create GitHub Release with the gem as an asset
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: pkg/*.gem
+          name: Release v${{ steps.gem-version.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      # To download this release in another workflow (even on different GitHub instances):
+      # - uses: dsaltares/fetch-gh-release-asset@master
+      #   with:
+      #     repo: "owner/oss-fig"    # Replace with your repo
+      #     version: "tags/v1.2.3"   # Or "latest"
+      #     file: "*.gem"           # Downloads the gem file
+      #     token: "${{ secrets.RELEASE_TOKEN }}"  # PAT with repo scope
+      
+      # Keep artifact for local workflow usage
+      - name: Upload artifact for local workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: gem-package
+          path: pkg/*.gem
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Publish to RubyGems
+        env:
+          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: |
+          mkdir -p $HOME/.gem
+          echo -e "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}" > $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/credentials
+          gem push pkg/*.gem
+          rm -f $HOME/.gem/credentials
