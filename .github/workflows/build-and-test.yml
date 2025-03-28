@@ -1,48 +1,67 @@
+# Workflow handles both testing and publishing of the gem
+# - Tests run on all branches and PRs
+# - Publishing only happens on version tags
+# - Manual triggers available for debugging
 name: build-and-test
 
 on:
   # Trigger on pushes to branches and version tags
+  # Note: We combine branch and tag triggers to prevent double-execution
+  # when pushing to a branch with an open PR
   push:
     branches: [ "*" ]
     tags: [ "v*" ]
-  # Only trigger on pull_request events for target branches
+  # Only trigger specific PR events to avoid redundant runs
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [ "*" ]
-  # Allow manual trigger
+  # Allow manual trigger for debugging and one-off runs
   workflow_dispatch:
 
+# Concurrency settings ensure we don't waste resources on outdated commits
+# Each job gets its own group to allow parallel runs of different job types
 concurrency:
   group: '${{ github.workflow }}-${{ github.job }}-${{ github.head_ref || github.ref_name }}'
   cancel-in-progress: true
 
+# Global environment variables ensure consistent dependency versions
 env:
-  BUNDLER_VER: 2.6.1
-  RUBYGEMS_VER: 3.6.1
+  BUNDLER_VER: 2.6.1  # Matches production environment
+  RUBYGEMS_VER: 3.6.1 # Latest stable version tested
 
 jobs:
+  # First job: Detect if we're building any native extensions
+  # This affects how we package and test the gem
   detect-native-gems:
     runs-on: ${{ matrix.os }}
     strategy:
+      # Don't fail everything if one platform fails
       fail-fast: false
+      # Test matrix covers:
+      # - Multiple OS versions for compatibility
+      # - Multiple Ruby versions for backward compatibility
+      # - Platform-specific builds for native extensions
       matrix:
         os:
-          - windows-2022
-          - macos-14
-          - ubuntu-20.04
-          - ubuntu-22.04
+          - windows-2022  # Latest Windows Server
+          - macos-14      # Latest macOS
+          - ubuntu-20.04  # LTS
+          - ubuntu-22.04  # Current LTS
         ruby:
-          - 3.1.2
-          - 3.3
+          - 3.1.2  # Minimum supported
+          - 3.3    # Latest stable
         include:
+          # Windows builds for both MinGW variants
           - os: windows-2022
             platform: x64-mingw32
           - os: windows-2022
             platform: x64-mingw-ucrt
+          # macOS builds for Intel and Apple Silicon
           - os: macos-14
             platform: x86_64-darwin
           - os: macos-14
             platform: arm64-darwin
+          # Linux builds for specific arch and generic
           - os: ubuntu-22.04
             platform: x86_64-linux
           - os: ubuntu-22.04
@@ -73,17 +92,16 @@ jobs:
           FIG_SVN_EXECUTABLE: 
         run: bundle exec rake rspec
 
-  # since we are packaging a pure ruby gem, we only need to package
-  # once for each ruby version, not once on every platform.
-  #
-  # and maybe we don't even need to package for each ruby version?
+  # Package job: Build and verify the gem
+  # We only need to package once since this is a pure Ruby gem
+  # Running on latest Ubuntu for consistent builds
   package:
-    needs: detect-native-gems
+    needs: detect-native-gems  # Ensures we know about any native extensions first
     runs-on: ubuntu-latest
     strategy:
       matrix:
         ruby:
-          - 3.1.2
+          - 3.1.2  # Build with minimum supported Ruby version for widest compatibility
 
     steps:
       - uses: actions/checkout@v3
