@@ -105,6 +105,82 @@ jobs:
           name: fig
           path: pkg/fig-*.gem
 
+  verify-version:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify version matches tag
+        run: |
+          # Extract version from version.rb
+          EMBEDDED_VERSION=$(grep -o "VERSION = '.*'" lib/fig/version.rb | cut -d"'" -f2)
+          # Extract version from git tag (remove 'v' prefix)
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          
+          echo "Version in version.rb: $EMBEDDED_VERSION"
+          echo "Version from git tag: $TAG_VERSION"
+          
+          if [ "$EMBEDDED_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch! version.rb ($EMBEDDED_VERSION) does not match git tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+  publish:
+    needs: [package, verify-version]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # needed for creating releases
+      packages: write
+    environment:
+      name: rubygems
+      url: https://rubygems.org/gems/fig
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download gem artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: fig
+          path: pkg/
+
+      - name: Get gem version
+        id: gem-version
+        run: |
+          GEM_VERSION=$(ls pkg/*.gem | sed 's/.*-\([0-9.]\+\)\.gem/\1/')
+          echo "version=${GEM_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: pkg/*.gem
+          name: Release v${{ steps.gem-version.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler: '2.6.1'
+          rubygems: '3.6.1'
+
+      - name: Publish to RubyGems
+        env:
+          # Using environment secrets for better security
+          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: |
+          mkdir -p $HOME/.gem
+          echo -e "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}" > $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/credentials
+          gem push pkg/*.gem
+          rm -f $HOME/.gem/credentials
+
 # Need to figure out how to parameterize the common parts of
 # these jobs and factor out only the differing parts.
   test-gem-installation-centos:
