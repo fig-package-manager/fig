@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    fig (2.0.0.pre.alpha.1)
+    fig (2.0.0.pre.alpha.2)
       base64 (~> 0.2.0)
       bcrypt_pbkdf (~> 1.1.0)
       bundler (~> 2.6.0)
@@ -26,7 +26,6 @@ GEM
     bcrypt_pbkdf (1.1.1)
     bcrypt_pbkdf (1.1.1-arm64-darwin)
     bcrypt_pbkdf (1.1.1-x64-mingw-ucrt)
-    bcrypt_pbkdf (1.1.1-x86_64-linux)
     colorize (1.1.0)
     date (3.4.1)
     diff-lcs (1.6.0)
