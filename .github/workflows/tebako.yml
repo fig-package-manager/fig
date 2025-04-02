@@ -62,8 +62,16 @@ jobs:
   smoke-test:
     needs: [tebako-package]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu:20.04
+          - rockylinux:9.3
+          - ubuntu:22.04
+
     container:
-      image: ubuntu:20.04
+      image: ${{ matrix.os }}
     
     steps:
       # Get the executable from previous job
