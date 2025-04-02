@@ -1,6 +1,7 @@
 name: tebako
 
 on:
+  push:
   workflow_dispatch:
 
 # Ensure we don't run duplicate workflows
@@ -27,6 +28,10 @@ jobs:
           bundler: '2.6.1'
           rubygems: '3.6.1'
           bundler-cache: false
+
+      - name: Install dependencies
+        run: bundle install --no-cache
+        
       - name: Build gem
         run: bundler exec rake build
         
@@ -47,7 +52,7 @@ jobs:
 
       # Upload the executable as an artifact
       - name: Upload executable
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: fig-linux-amd64
           path: fig-linux-amd64
@@ -63,7 +68,7 @@ jobs:
     steps:
       # Get the executable from previous job
       - name: Download executable
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: fig-linux-amd64
           path: ./
