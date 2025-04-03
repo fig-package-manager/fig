@@ -31,7 +31,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'ed25519', '~> 1.3.0'
   spec.add_dependency 'highline',          '~> 3.1.0'
   spec.add_dependency 'json',              '~> 2.10.0'
-  spec.add_dependency 'ffi-libarchive-binary', '~> 0.3.0'
+  spec.add_dependency 'ffi-libarchive-binary', '~> 0.4.0'
   spec.add_dependency 'log4r',             '~> 1.1.0'
   spec.add_dependency 'net-ftp', '~> 0.3.0'
   spec.add_dependency 'net-netrc',         '~> 0.2.0'

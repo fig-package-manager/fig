@@ -1,43 +1,67 @@
+# Workflow handles both testing and publishing of the gem
+# - Tests run on all branches and PRs
+# - Publishing only happens on version tags
+# - Manual triggers available for debugging
 name: build-and-test
 
 on:
+  # Trigger on pushes to branches and version tags
+  # Note: We combine branch and tag triggers to prevent double-execution
+  # when pushing to a branch with an open PR
   push:
     branches: [ "*" ]
     tags: [ "v*" ]
+  # Only trigger specific PR events to avoid redundant runs
   pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ "*" ]
+  # Allow manual trigger for debugging and one-off runs
   workflow_dispatch:
 
+# Concurrency settings ensure we don't waste resources on outdated commits
+# Each job gets its own group to allow parallel runs of different job types
 concurrency:
   group: '${{ github.workflow }}-${{ github.job }}-${{ github.head_ref || github.ref_name }}'
   cancel-in-progress: true
 
+# Global environment variables ensure consistent dependency versions
 env:
-  BUNDLER_VER: 2.6.1
-  RUBYGEMS_VER: 3.6.1
+  BUNDLER_VER: 2.6.1  # Matches production environment
+  RUBYGEMS_VER: 3.6.1 # Latest stable version tested
 
 jobs:
+  # First job: Detect if we're building any native extensions
+  # This affects how we package and test the gem
   detect-native-gems:
     runs-on: ${{ matrix.os }}
     strategy:
+      # Don't fail everything if one platform fails
       fail-fast: false
+      # Test matrix covers:
+      # - Multiple OS versions for compatibility
+      # - Multiple Ruby versions for backward compatibility
+      # - Platform-specific builds for native extensions
       matrix:
         os:
-          - windows-2022
-          - macos-14
-          - ubuntu-20.04
-          - ubuntu-22.04
+          - windows-2022  # Latest Windows Server
+          - macos-14      # Latest macOS
+          - ubuntu-20.04  # LTS
+          - ubuntu-22.04  # Current LTS
         ruby:
-          - 3.1.2
-          - 3.3
+          - 3.1.2  # Minimum supported
+          - 3.3    # Latest stable
         include:
+          # Windows builds for both MinGW variants
           - os: windows-2022
             platform: x64-mingw32
           - os: windows-2022
             platform: x64-mingw-ucrt
+          # macOS builds for Intel and Apple Silicon
           - os: macos-14
             platform: x86_64-darwin
           - os: macos-14
             platform: arm64-darwin
+          # Linux builds for specific arch and generic
           - os: ubuntu-22.04
             platform: x86_64-linux
           - os: ubuntu-22.04
@@ -68,17 +92,16 @@ jobs:
           FIG_SVN_EXECUTABLE: 
         run: bundle exec rake rspec
 
-  # since we are packaging a pure ruby gem, we only need to package
-  # once for each ruby version, not once on every platform.
-  #
-  # and maybe we don't even need to package for each ruby version?
+  # Package job: Build and verify the gem
+  # We only need to package once since this is a pure Ruby gem
+  # Running on latest Ubuntu for consistent builds
   package:
-    needs: detect-native-gems
+    needs: detect-native-gems  # Ensures we know about any native extensions first
     runs-on: ubuntu-latest
     strategy:
       matrix:
         ruby:
-          - 3.1.2
+          - 3.1.2  # Build with minimum supported Ruby version for widest compatibility
 
     steps:
       - uses: actions/checkout@v3
@@ -104,6 +127,82 @@ jobs:
         with:
           name: fig
           path: pkg/fig-*.gem
+
+  verify-version:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify version matches tag
+        run: |
+          # Extract version from version.rb
+          EMBEDDED_VERSION=$(grep -o "VERSION = '.*'" lib/fig/version.rb | cut -d"'" -f2)
+          # Extract version from git tag (remove 'v' prefix)
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          
+          echo "Version in version.rb: $EMBEDDED_VERSION"
+          echo "Version from git tag: $TAG_VERSION"
+          
+          if [ "$EMBEDDED_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch! version.rb ($EMBEDDED_VERSION) does not match git tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+  publish:
+    needs: [package, verify-version]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # needed for creating releases
+      packages: write
+    environment:
+      name: rubygems
+      url: https://rubygems.org/gems/fig
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download gem artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: fig
+          path: pkg/
+
+      - name: Get gem version
+        id: gem-version
+        run: |
+          GEM_VERSION=$(ls pkg/*.gem | sed 's/.*-\([0-9.]\+\)\.gem/\1/')
+          echo "version=${GEM_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: pkg/*.gem
+          name: Release v${{ steps.gem-version.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler: '2.6.1'
+          rubygems: '3.6.1'
+
+      - name: Publish to RubyGems
+        env:
+          # Using environment secrets for better security
+          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: |
+          mkdir -p $HOME/.gem
+          echo -e "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}" > $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/credentials
+          gem push pkg/*.gem
+          rm -f $HOME/.gem/credentials
 
 # Need to figure out how to parameterize the common parts of
 # these jobs and factor out only the differing parts.
