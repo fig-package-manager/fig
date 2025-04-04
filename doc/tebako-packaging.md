@@ -1,10 +1,14 @@
 # Tebako Packaging Architecture
 
-This document describes the architecture and design decisions for packaging Fig as platform-specific executables using Tebako.
+This document describes the architecture and design decisions for
+packaging Fig as platform-specific executables using Tebako.
 
 ## Overview
 
-The packaging workflow creates standalone executables for Linux, macOS, and Windows platforms. While based on Tebako's reference implementation, our approach is streamlined for Fig's specific needs as a Tebako consumer rather than a Tebako developer.
+The packaging workflow creates standalone executables for various Linux,
+macOS, and Windows platforms. While based on Tebako's reference
+implementation, our approach is streamlined for Fig's specific needs
+as a Tebako consumer rather than a Tebako developer.
 
 ## Key Differences from Tebako Reference
 
@@ -13,23 +17,32 @@ The packaging workflow creates standalone executables for Linux, macOS, and Wind
    - No development environment testing (handled by Tebako upstream)
    - Focused on distribution rather than Tebako development
 
-2. **Container Usage**
-   - Linux: Uses Tebako's container for consistent builds
-   - macOS/Windows: Direct runner execution (no containers needed)
+2. **Image Usage**
+   - Linux: Uses Tebako's image for consistent builds
+   - macOS/Windows: Direct runner execution (no images needed)
 
 ## Platform-Specific Details
 
-### Linux (AMD64)
-- **Environment**: GitHub-hosted Ubuntu runner + Tebako container
-- **Container**: `ghcr.io/tamatebako/tebako-ci-container:latest`
+### Linux Ubuntu 20.04+, RockyLinux 9.3+ (AMD64)
+- **Environment**: GitHub-hosted Ubuntu runner + Tebako image
+- **Image**: `ghcr.io/tamatebako/tebako-ci-container-PLATFORM:latest`
   - Versioning: Track latest stable release
   - Contains all build dependencies
   - Provides consistent build environment across CI/CD
-- **Dependencies**: All handled by container
+- **Dependencies**: All handled by image
 - **Assumptions**: 
   - Docker available on runner
-  - Container provides complete build environment
-  - Container's Ruby version matches workflow configuration
+  - Image provides complete build environment
+  - Image's Ruby version matches workflow configuration
+  
+### Linux CentOS 7.9.2009 (AMD64)
+- **Environment**: Github-hosted Ubuntu runner + Tebako image
+- **Image**: TBD
+- **Dependencies**: All handled by image
+- **Assumptions**:
+  - Docker available on runner
+  - Image provides complete build environment
+  - Image's Ruby version matches workflow configuration
 
 ### macOS (AMD64 + ARM64)
 - **Environment**: GitHub-hosted macOS-14 runner
@@ -80,9 +93,7 @@ Each platform includes basic validation with platform-specific considerations:
 ./fig-{platform} --help
 
 # Basic functionality
-cd $(mktemp -d)
-./fig-{platform} init
-test -d fig && test -f fig/config.yml
+./fig-{platform} -s GREETING=Hello -- 'echo $GREETING, World.'
 ```
 
 ### Platform-Specific Tests
@@ -129,22 +140,22 @@ Executables are:
 - **Retention Policy**:
   - Workflow artifacts: 30 days
   - Release artifacts: permanent
-  - Debug symbols: optional, 90 days
+  - Debug symbols: optional, 30 days
 
 ### Security Considerations
 - **Build Environment**:
-  - Isolated build containers
+  - Isolated build images
   - Clean runner state
   - No credential persistence
 
 - **Artifact Verification**:
   - SHA256 checksums
   - Optional code signing
-  - Reproducible builds when possible
+  - Reproducible builds unless impossible
 
 ### Error Handling and Debugging
 - **Common Issues**:
-  - Container pull failures
+  - Image pull failures
   - MSYS2 package conflicts
   - macOS SDK version mismatches
 
@@ -162,7 +173,7 @@ Executables are:
 
 ### Workflow Triggers
 - Tags: Full release build
-- Pull Requests: Smoke tests only
+- Pull Requests: Smoke tests for platforms based on changed files
 - Manual: Full test matrix
 
 ### External Services
@@ -197,14 +208,14 @@ Executables are:
 2. **Workflow Updates**
    - GitHub Actions versions
    - Runner image updates
-   - Container image updates
+   - Image image updates
 
 3. **Monitoring**
    - Build times per platform
    - Artifact sizes
    - Test coverage across platforms
 
-## Common Tasks
+## Common Ongoing Maintenance Tasks
 
 ### Adding Support for a New Ruby Version
 
@@ -216,8 +227,8 @@ Executables are:
          - ruby-version: '3.3.4'  # Add new version here
    ```
 
-2. **Test Container Compatibility**:
-   - Verify Tebako container supports the new Ruby version
+2. **Test Image Compatibility**:
+   - Verify Tebako image supports the new Ruby version
    - Test on Linux first (simplest environment)
    - Document any version-specific dependencies
 
@@ -283,8 +294,8 @@ Executables are:
 1. **Common Issues by Platform**:
    ```markdown
    Linux:
-   - Container pull failures -> Check container registry status
-   - Missing dependencies -> Verify container version
+   - Image pull failures -> Check image registry status
+   - Missing dependencies -> Verify image version
    
    macOS:
    - SDK version mismatch -> Update Xcode version
