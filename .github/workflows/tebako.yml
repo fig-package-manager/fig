@@ -14,11 +14,34 @@ env:
   RUBYGEMS_VER: 3.6.1
 
 jobs:
-  # Package the gem into a platform-specific executable using tebako
-  # TODO: Extend this to a matrix of platforms (linux/macos/windows)
-  # TODO: Add smoke tests for each platform
+  # Package the gem into platform-specific executables using tebako
   tebako-package:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact: fig-linux-amd64
+            use_docker: true
+            docker_image: ghcr.io/tamatebako/tebako-ci-container:latest
+          # macOS AMD64
+          - os: macos-14
+            platform: macos
+            artifact: fig-macos-amd64
+            use_docker: false
+          # macOS ARM64
+          - os: macos-14
+            platform: macos
+            artifact: fig-macos-arm64
+            use_docker: false
+            env:
+              ARCHFLAGS: "-arch arm64"
+          - os: windows-2022
+            platform: windows
+            artifact: fig-windows-amd64.exe
+            use_docker: false
+    runs-on: ${{ matrix.os }}
     
     steps:
       - uses: actions/checkout@v3
@@ -35,10 +58,18 @@ jobs:
       - name: Build gem
         run: bundler exec rake build
         
-      # Run tebako in docker to create executable
-      - name: Create executable with tebako
+      # Set up tebako for non-Linux platforms
+      - name: Setup tebako
+        if: ${{ !matrix.use_docker }}
+        uses: tamatebako/setup-tebako@v1
+        with:
+          ruby-version: '3.3.4'
+
+      # Run tebako in docker (Linux)
+      - name: Create executable with tebako (Linux)
+        if: ${{ matrix.use_docker }}
         env:
-          image_name: "ghcr.io/tamatebako/tebako-ubuntu-20.04"
+          image_name: ${{ matrix.docker_image }}
         run: |
           docker run --rm \
             -v $(pwd):/workspace \
@@ -48,50 +79,85 @@ jobs:
               --patchelf \
               --root=pkg \
               --entry-point=fig \
-              --output=fig-linux-amd64
+              --output=${{ matrix.artifact }}
+
+      # Run tebako directly (non-Linux)
+      - name: Create executable with tebako (non-Linux)
+        if: ${{ !matrix.use_docker }}
+        run: |
+          tebako press \
+            --root=pkg \
+            --entry-point=fig \
+            --output=${{ matrix.artifact }}
 
       # Upload the executable as an artifact
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: fig-linux-amd64
-          path: fig-linux-amd64
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
           retention-days: 30
 
   # Run smoke tests on the executable in a clean environment
   smoke-test:
     needs: [tebako-package]
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu:20.04
-          - rockylinux:9.3
-          - ubuntu:22.04
-
-    container:
-      image: ${{ matrix.os }}
+        include:
+          # Linux tests in containers
+          - os: ubuntu-latest
+            container: ubuntu:20.04
+            artifact: fig-linux-amd64
+            platform: linux
+          - os: ubuntu-latest
+            container: rockylinux:9.3
+            artifact: fig-linux-amd64
+            platform: linux
+          - os: ubuntu-latest
+            container: ubuntu:22.04
+            artifact: fig-linux-amd64
+            platform: linux
+          # macOS tests
+          - os: macos-14
+            artifact: fig-macos-amd64
+            platform: macos
+          - os: macos-14
+            artifact: fig-macos-arm64
+            platform: macos
+            env:
+              ARCHFLAGS: "-arch arm64"
+          # Windows test
+          - os: windows-latest
+            artifact: fig-windows-amd64.exe
+            platform: windows
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    # Skip container for non-Linux platforms
+    if: ${{ matrix.platform == 'linux' }}
     
     steps:
       # Get the executable from previous job
       - name: Download executable
         uses: actions/download-artifact@v4
         with:
-          name: fig-linux-amd64
+          name: ${{ matrix.artifact }}
           path: ./
 
       # Make executable
       - name: Make executable
-        run: chmod +x ./fig-linux-amd64
+        if: ${{ matrix.platform != 'windows' }}
+        run: chmod +x ./${{ matrix.artifact }}
 
       # Basic version check
       - name: Version check
-        run: ./fig-linux-amd64 --version
+        shell: bash
+        run: ./${{ matrix.artifact }} --version
 
       # Help command
       - name: Help command
-        run: ./fig-linux-amd64 --help
+        shell: bash
+        run: ./${{ matrix.artifact }} --help
 
       # Basic functionality test
       - name: Basic functionality
