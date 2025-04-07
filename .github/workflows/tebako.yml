@@ -97,7 +97,7 @@ jobs:
       - name: Setup tebako
         uses: tamatebako/tebako/.github/actions/setup-tebako@main
         with:
-          ruby-version: '3.3.4'
+          ruby_version: '3.3.4'
 
       # Run tebako directly (non-Linux)
       - name: Create executable with tebako
@@ -138,10 +138,11 @@ jobs:
         
       # Set up tebako for non-Linux platforms
       - name: Setup tebako
-        uses: tamatebako/tebako/.github/actions/setup-tebako@main
-        with:
-          ruby-version: '3.3.4'
-
+        run: |
+          ridk enable ucrt64
+          pacman -S git tar bison flex toolchain make cmake boost diffutils libevent double-conversion fmt glog dlfcn gtest autotools ncurses libyaml
+          gem install tebako
+                    
       # Run tebako directly (non-Linux)
       - name: Create executable with tebako
         run: |
