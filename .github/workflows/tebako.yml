@@ -49,14 +49,14 @@ jobs:
               --patchelf \
               --root=pkg \
               --entry-point=fig \
-              --output=$artifact
+              --output=${{ env.artifact }}
 
       # Upload the executable as an artifact
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: $artifact
-          path: $artifact
+          name: ${{ env.artifact }}
+          path: ${{ env.artifact }}
           retention-days: 30
 
   tebako-package-macos:
@@ -149,14 +149,14 @@ jobs:
           tebako press \
             --root=pkg \
             --entry-point=fig \
-            --output=$artifact
+            --output=${{ env.artifact }}
 
       # Upload the executable as an artifact
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: $artifact
-          path: $artifact
+          name: ${{ env.artifact }}
+          path: ${{ env.artifact }}
           retention-days: 30
 
   smoke-test-linux:
