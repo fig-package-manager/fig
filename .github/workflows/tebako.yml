@@ -92,7 +92,7 @@ jobs:
         
       # Set up tebako for non-Linux platforms
       - name: Setup tebako
-        uses: tamatebako/setup-tebako@v1
+        uses: tamatebako/tebako/.github/actions/setup-tebako@main
         with:
           ruby-version: '3.3.4'
 
@@ -135,7 +135,7 @@ jobs:
         
       # Set up tebako for non-Linux platforms
       - name: Setup tebako
-        uses: tamatebako/setup-tebako@v1
+        uses: tamatebako/tebako/.github/actions/setup-tebako@main
         with:
           ruby-version: '3.3.4'
 
