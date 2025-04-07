@@ -149,7 +149,7 @@ jobs:
       # Run tebako directly (non-Linux)
       - name: Create executable with tebako
         run: |
-          tebako press --root=pkg --entry-point=fig --output=${{ env.artifact }}
+          ridk exec tebako press --root=pkg --entry-point=fig --output=${{ env.artifact }}
 
       # Upload the executable as an artifact
       - name: Upload executable
