@@ -18,6 +18,9 @@ jobs:
   tebako-package-linux:
     runs-on: ubuntu-latest
     
+    env:
+      artifact: "fig-linux-amd64"
+
     steps:
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
@@ -41,19 +44,19 @@ jobs:
           docker run --rm \
             -v $(pwd):/workspace \
             -w /workspace \
-            ghcr.io/tamatebako/tebako-ci-container-ubuntu-20.04:latest \
+            ghcr.io/tamatebako/tebako-ubuntu-20.04:latest \
             tebako press \
               --patchelf \
               --root=pkg \
               --entry-point=fig \
-              --output=${{ matrix.artifact }}
+              --output=$artifact
 
       # Upload the executable as an artifact
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}
+          name: $artifact
+          path: $artifact
           retention-days: 30
 
   tebako-package-macos:
@@ -164,15 +167,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target_os: ubuntu:20.04
-            executable: fig-linux-amd64
-          - target_os: rockylinux:9.3
-            executable: fig-linux-amd64
-          - target_os: rockylinux:8
-            executable: fix-linux-amd64
-          - target_os: ubuntu:22.04
-            executable: fig-linux-amd64
+        target_os:
+          - ubuntu:20.04
+          - ubuntu:22.04
+          - ubuntu:24.04
+          - rockylinux:9.3
+        executable: [ fig-linux-amd64 ]
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Download artifact
