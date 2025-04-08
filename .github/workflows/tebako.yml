@@ -124,7 +124,38 @@ jobs:
       CC: "gcc"
       CXX: "g++"
       
+    defaults:
+      run:
+        shell: msys2 {0}
+
     steps:
+      - name: Setup MSys2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ env.sys }}
+          update: true
+          install: >-
+            git
+            tar
+            bison
+            flex
+          pacboy: >-
+            cmake:p
+            boost:p
+            diffutils:p
+            double-conversion:p
+            fmt:p
+            glog:p
+            dlfcn:p
+            gtest:p
+            autotools:p
+            ncurses:p
+            toolchain:p
+            openssl:p
+            make:p
+            libyaml:p
+            libxslt:p
+
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3.4'
@@ -138,11 +169,8 @@ jobs:
       # Set up tebako for non-Linux platforms
       - name: Setup tebako
         run: |
-          ridk install 1,3
-          ridk enable ${{ env.sys }}
-          ridk exec pacman -S ucrt64/mingw-w64-ucrt-x86_64-cmake ucrt64/mingw-w64-ucrt-x86_64-boost ucrt64/mingw-w64-ucrt-x86_64-glog ucrt64/mingw-w64-ucrt-x86_64-gtest ucrt64/mingw-w64-ucrt-x86_64-fmt ucrt64/mingw-w64-ucrt-x86_64-libyaml ucrt64/mingw-w64-ucrt-x86_64-dlfcn
           gem install tebako
-          ridk exec tebako setup
+          tebako setup
                     
       - name: Install dependencies
         run: bundle install --no-cache
@@ -153,7 +181,7 @@ jobs:
       # Run tebako directly (non-Linux)
       - name: Create executable with tebako
         run: |
-          ridk exec tebako press --root=pkg --entry-point=fig --output=${{ env.artifact }}
+          tebako press --root=pkg --entry-point=fig --output=${{ env.artifact }}
 
       # Upload the executable as an artifact
       - name: Upload executable
