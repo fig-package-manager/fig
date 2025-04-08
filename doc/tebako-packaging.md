@@ -25,7 +25,7 @@ as a Tebako consumer rather than a Tebako developer.
 
 ### Linux Ubuntu 20.04+, RockyLinux 9.3+ (AMD64)
 - **Environment**: GitHub-hosted Ubuntu runner + Tebako image
-- **Image**: `ghcr.io/tamatebako/tebako-ci-container-PLATFORM:latest`
+- **Image**: `ghcr.io/tamatebako/tebako-PLATFORM:latest`
   - Versioning: Track latest stable release
   - Contains all build dependencies
   - Provides consistent build environment across CI/CD
@@ -76,7 +76,7 @@ as a Tebako consumer rather than a Tebako developer.
   - Windows SDK 10.0.20348.0 or later
   - Visual Studio Build Tools (optional)
 - **Assumptions**:
-  - Long filename support enabled in git
+  - Long filename support enabled in git (and on OS)
   - MSYS2 shell available for commands
   - No antivirus interference with build process
 
