@@ -139,11 +139,41 @@ jobs:
       - name: Build gem
         run: bundler exec rake build
         
+      - name: Setup MSys
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ucrt64
+          path-type: minimal
+          update: true
+          install: >-
+            git
+            tar
+            bison
+            flex
+          pacboy: >-
+            cmake:p
+            boost:p
+            diffutils:p
+            libevent:p
+            double-conversion:p
+            fmt:p
+            glog:p
+            dlfcn:p
+            ninja:p
+            gtest:p
+            autotools:p
+            ncurses:p
+            ruby:p
+            toolchain:p
+            openssl:p
+            make:p
+            libyaml:p
+            libxslt:p
+
       # Set up tebako for non-Linux platforms
       - name: Setup tebako
         run: |
           ridk enable ucrt64
-          pacman -S git tar bison flex toolchain make cmake boost diffutils libevent double-conversion fmt glog dlfcn gtest autotools ncurses libyaml
           gem install tebako
                     
       # Run tebako directly (non-Linux)
