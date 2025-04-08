@@ -11,10 +11,14 @@ on:
   push:
     branches: [ "*" ]
     tags: [ "v*" ]
+    paths-ignore:
+      - 'doc/**'
   # Only trigger specific PR events to avoid redundant runs
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [ "*" ]
+    paths-ignore:
+      - 'doc/**'
   # Allow manual trigger for debugging and one-off runs
   workflow_dispatch:
 
