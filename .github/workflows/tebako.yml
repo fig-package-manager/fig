@@ -124,21 +124,12 @@ jobs:
       CC: "gcc"
       CXX: "g++"
       
+    defaults:
+      run:
+        shell: msys2 {0}
+
     steps:
       - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.3.4'
-          bundler: '2.6.1'
-          rubygems: '3.6.1'
-          bundler-cache: false
-
-      - name: Install dependencies
-        run: bundle install --no-cache
-        
-      - name: Build gem
-        run: bundler exec rake build
-        
       - name: Setup MSys
         uses: msys2/setup-msys2@v2
         with:
@@ -163,7 +154,6 @@ jobs:
             gtest:p
             autotools:p
             ncurses:p
-            ruby:p
             toolchain:p
             openssl:p
             make:p
@@ -173,13 +163,25 @@ jobs:
       # Set up tebako for non-Linux platforms
       - name: Setup tebako
         run: |
-          ridk enable ucrt64
           gem install tebako
                     
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3.4'
+          bundler: '2.6.1'
+          rubygems: '3.6.1'
+          bundler-cache: false
+
+      - name: Install dependencies
+        run: bundle install --no-cache
+        
+      - name: Build gem
+        run: bundler exec rake build
+        
       # Run tebako directly (non-Linux)
       - name: Create executable with tebako
         run: |
-          ridk exec tebako press --root=pkg --entry-point=fig --output=${{ env.artifact }}
+          tebako press --root=pkg --entry-point=fig --output=${{ env.artifact }}
 
       # Upload the executable as an artifact
       - name: Upload executable
