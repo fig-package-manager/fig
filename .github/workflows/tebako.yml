@@ -2,6 +2,8 @@ name: tebako
 
 on:
   push:
+    paths-ignore:
+      - 'doc/**'
   workflow_dispatch:
 
 # Ensure we don't run duplicate workflows
