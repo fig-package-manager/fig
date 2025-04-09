@@ -132,33 +132,6 @@ jobs:
         shell: msys2 {0}
 
     steps:
-      - name: Setup MSys2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: ${{ env.sys }}
-          update: true
-          install: >-
-            git
-            tar
-            bison
-            flex
-          pacboy: >-
-            cmake:p
-            boost:p
-            diffutils:p
-            double-conversion:p
-            fmt:p
-            glog:p
-            dlfcn:p
-            gtest:p
-            autotools:p
-            ncurses:p
-            toolchain:p
-            openssl:p
-            make:p
-            libyaml:p
-            libxslt:p
-
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3.4'
@@ -166,21 +139,18 @@ jobs:
           rubygems: '3.6.1'
           bundler-cache: false
 
-      - name: Enable long filenames
-        run: git config --global core.longpaths true
-
-      # Set up tebako for non-Linux platforms
-      - name: Setup tebako
-        run: |
-          gem install tebako
-          tebako setup
-                    
       - name: Install dependencies
         run: bundle install --no-cache
         
       - name: Build gem
         run: bundler exec rake build
         
+      # Set up tebako for non-Linux platforms
+      - name: Setup tebako
+        uses: tamatebako/tebako/.github/actions/setup-tebako@main
+        with:
+          ruby_version: '3.3.4'
+
       # Run tebako directly (non-Linux)
       - name: Create executable with tebako
         run: |
