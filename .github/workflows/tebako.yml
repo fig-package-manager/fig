@@ -14,29 +14,48 @@ concurrency:
 env:
   BUNDLER_VER: 2.6.1
   RUBYGEMS_VER: 3.6.1
+  RUBY_VER: 3.3.7
 
 jobs:
-  # Package the gem into platform-specific executables using tebako
-  tebako-package-linux:
+  # build the gem
+  # ideally we get this from build-and-test so that we package what we tested
+  build-gem:
     runs-on: ubuntu-latest
-    
-    env:
-      artifact: "fig-linux-amd64"
-
     steps:
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3.4'
-          bundler: '2.6.1'
-          rubygems: '3.6.1'
+          ruby-version: ${{ env.RUBY_VER }}
+          bundler: ${{ env.BUNDLER_VER }}
+          rubygems: ${{ env.RUBYGEMS_VER }}
           bundler-cache: false
-
+          
       - name: Install dependencies
         run: bundle install --no-cache
         
       - name: Build gem
         run: bundler exec rake build
+
+      - name: Upload gem for packaging
+        uses: actions/upload-artifact@v4
+        with:
+          name: fig
+          path: pkg/fig-*.gem
+
+  # Package the gem into platform-specific executables using tebako
+  tebako-package-linux:
+    runs-on: ubuntu-latest
+    needs: build-gem
+
+    env:
+      artifact: "fig-linux-amd64"
+
+    steps:
+      - name: Download built gem from previous job
+        uses: actions/download-artifact@v4
+        with:
+          name: fig
+          path: pkg/
         
       # Run tebako in docker (Linux)
       - name: Create executable with tebako (Linux)
@@ -62,6 +81,7 @@ jobs:
           retention-days: 30
 
   tebako-package-macos:
+    needs: build-gem
     strategy:
       fail-fast: false
       matrix:
@@ -81,25 +101,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
+      - name: Download built gem from previous job
+        uses: actions/download-artifact@v4
         with:
-          ruby-version: '3.3.4'
-          bundler: '2.6.1'
-          rubygems: '3.6.1'
-          bundler-cache: false
-
-      - name: Install dependencies
-        run: bundle install --no-cache
-        
-      - name: Build gem
-        run: bundler exec rake build
+          name: fig
+          path: pkg/
         
       # Set up tebako for non-Linux platforms
       - name: Setup tebako
         uses: tamatebako/tebako/.github/actions/setup-tebako@main
         with:
-          ruby_version: '3.3.4'
+          ruby_version: ${{ env.RUBY_VER }}
 
       # Run tebako directly (non-Linux)
       - name: Create executable with tebako
@@ -120,6 +132,7 @@ jobs:
   tebako-package-windows:
     continue-on-error: true
     runs-on: windows-2022
+    needs: build-gem
 
     env:
       artifact: "fig-windows-amd64.exe"
@@ -127,30 +140,30 @@ jobs:
       CC: "gcc"
       CXX: "g++"
       
-    defaults:
-      run:
-        shell: msys2 {0}
-
     steps:
-      - uses: ruby/setup-ruby@v1
+      - name: Download built gem from previous job
+        uses: actions/download-artifact@v4
         with:
-          ruby-version: '3.3.4'
-          bundler: '2.6.1'
-          rubygems: '3.6.1'
-          bundler-cache: false
+          name: fig
+          path: pkg/
 
-      - name: Install dependencies
-        run: bundle install --no-cache
-        
-      - name: Build gem
-        run: bundler exec rake build
-        
       # Set up tebako for non-Linux platforms
       - name: Setup tebako
         uses: tamatebako/tebako/.github/actions/setup-tebako@main
         with:
-          ruby_version: '3.3.4'
+          ruby_version: ${{ env.RUBY_VER }}
 
+      - name: Look for things we want to use
+        continue-on-error: true
+        run: |
+          echo $env:Path
+          Get-Command ruby
+          Get-Command gem
+          Get-Command bundle
+          gem which tebako
+          Get-Command tebako
+          gem info yaml
+        
       # Run tebako directly (non-Linux)
       - name: Create executable with tebako
         run: |
