@@ -140,6 +140,10 @@ jobs:
       CC: "gcc"
       CXX: "g++"
       
+    defaults:
+      run:
+        shell: msys2 {0}
+
     steps:
       - name: Download built gem from previous job
         uses: actions/download-artifact@v4
