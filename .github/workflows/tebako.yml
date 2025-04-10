@@ -147,11 +147,20 @@ jobs:
           name: fig
           path: pkg/
 
+      - name: Setup MSys
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ucrt64
+          path-type: minimal
+          update: true
+
       # Set up tebako for non-Linux platforms
       - name: Setup tebako
         uses: tamatebako/tebako/.github/actions/setup-tebako@main
         with:
           ruby_version: ${{ env.RUBY_VER }}
+          cc: ${{ env.CC }}
+          cxx: ${{ env.CXX }}
 
       - name: Look for things we want to use
         continue-on-error: true
