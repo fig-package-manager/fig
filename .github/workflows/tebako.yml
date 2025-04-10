@@ -181,13 +181,14 @@ jobs:
       - name: Create executable with tebako
         run: |
           tebako press --root=pkg --entry-point=fig --output=${{ env.artifact }}
+          mv ${{ env.artifact }}.exe ${{ env.artifact }}
 
       # Upload the executable as an artifact
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.artifact }}
-          path: ${{ env.artifact }}
+          path: ./${{ env.artifact }}
           retention-days: 30
 
   smoke-test-linux:
