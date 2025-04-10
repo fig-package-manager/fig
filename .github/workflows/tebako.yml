@@ -231,7 +231,7 @@ jobs:
         run: ./${{ matrix.executable }} -s GREETING=Hello -- 'echo $GREETING, World'
 
   smoke-test-not-linux:
-    needs: [ tebako-package-macos ]
+    needs: [ tebako-package-macos, tebako-package-windows ]
     runs-on: ${{ matrix.target_os }}
 
     strategy:
@@ -246,6 +246,10 @@ jobs:
             executable: fig-macos-amd64
           - target_os: macos-15
             executable: fig-macos-arm64
+          - target_os: windows-2022
+            executable: fig-windows-amd64.exe
+          - target_os: windows-2025
+            executable: fig-windows-amd64.exe
 
     steps:
       - name: Download artifact
