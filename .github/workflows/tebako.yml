@@ -130,7 +130,6 @@ jobs:
           retention-days: 30
 
   tebako-package-windows:
-    continue-on-error: true
     runs-on: windows-2022
     needs: build-gem
 
@@ -166,17 +165,6 @@ jobs:
           cc: ${{ env.CC }}
           cxx: ${{ env.CXX }}
 
-      - name: Look for things we want to use
-        continue-on-error: true
-        run: |
-          echo $env:Path
-          Get-Command ruby
-          Get-Command gem
-          Get-Command bundle
-          gem which tebako
-          Get-Command tebako
-          gem info yaml
-        
       # Run tebako directly (non-Linux)
       - name: Create executable with tebako
         run: |
