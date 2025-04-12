@@ -172,7 +172,7 @@ jobs:
       # Set up tebako for non-Linux platforms
       - name: Setup tebako
         run: |
-          gem install tebako
+          gem install tebako --version 0.13.2.rc1 
           tebako setup
                     
       - name: Install dependencies
