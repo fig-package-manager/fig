@@ -2,9 +2,10 @@ name: build ci docker images
 
 on:
   push:
-    # Build on any branch when docker files change
+    # Build on any branch when docker files or this workflow changes
     paths:
       - 'docker/ci/**'
+      - '.github/workflows/docker-image.yml'
   workflow_dispatch: # manual trigger option
 
 jobs:
