@@ -1,0 +1,34 @@
+name: build ci docker images
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docker/ci/**'
+  workflow_dispatch: # manual trigger option
+
+jobs:
+  build-centos:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: login to ghcr
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: build and push centos image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./docker/ci/centos
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/ci-centos:latest
+            ghcr.io/${{ github.repository }}/ci-centos:${{ github.sha }}

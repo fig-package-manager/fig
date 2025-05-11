@@ -1,0 +1,7 @@
+# /etc/yum.repos.d/CentOS-SCL.repo
+
+[scl-rh]
+name=CentOS-$releasever - SCL-RH
+baseurl=http://vault.centos.org/7.9.2009/sclo/$basearch/rh
+gpgcheck=1
+gpgkey=https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-SCLo
