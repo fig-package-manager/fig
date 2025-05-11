@@ -24,7 +24,7 @@ RUN perl -e 'use List::Util qw(pairs)' || cpan List::Util || cpan List::Util
 
 # install asdf for ruby version management
 ADD https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-amd64.tar.gz /tmp/asdf.tgz
-RUN mkdir -p /opt/asdf && tar -xzf /tmp/asdf.tgz -C /opt/asdf --strip-components=1
+RUN cd /usr/local/bin && tar xzf /tmp/asdf.tgz
 ENV ASDF_DATA_DIR=/opt/asdf
 ENV PATH="${ASDF_DATA_DIR}/bin:${ASDF_DATA_DIR}/shims:${PATH}"
 
