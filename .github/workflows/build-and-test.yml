@@ -47,19 +47,19 @@ jobs:
       # - Platform-specific builds for native extensions
       matrix:
         os:
-          - windows-2022  # Latest Windows Server
+          #- windows-2022  # Latest Windows Server
           - macos-14      # Latest macOS
-          - ubuntu-20.04  # LTS
+          #- ubuntu-20.04  # LTS
           - ubuntu-22.04  # Current LTS
         ruby:
           - "3.1.2"  # Minimum supported
           - "3.3.7"  # Latest stable
         include:
           # Windows builds for both MinGW variants
-          - os: windows-2022
-            platform: x64-mingw32
-          - os: windows-2022
-            platform: x64-mingw-ucrt
+          # - os: windows-2022
+          #   platform: x64-mingw32
+          # - os: windows-2022
+          #   platform: x64-mingw-ucrt
           # macOS builds for Intel and Apple Silicon
           - os: macos-14
             platform: x86_64-darwin
@@ -70,10 +70,10 @@ jobs:
             platform: x86_64-linux
           - os: ubuntu-22.04
             platform: any
-          - os: ubuntu-20.04
-            platform: x86_64-linux
-          - os: ubuntu-20.04
-            platform: any
+          # - os: ubuntu-20.04
+          #   platform: x86_64-linux
+          # - os: ubuntu-20.04
+          #   platform: any
             
     steps:
       - uses: actions/checkout@v3
