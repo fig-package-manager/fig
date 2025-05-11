@@ -208,15 +208,27 @@ jobs:
           gem push pkg/*.gem
           rm -f $HOME/.gem/credentials
 
+  compute-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      IMAGE_TAG: ${{ steps.compute-tag.outputs.branch_name }}
+    steps:
+      - name: Set branch environment variables
+        id: branch_env
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "is_master=${{ github.ref == 'refs/heads/master' }}" >> $GITHUB_OUTPUT
+
 # Need to figure out how to parameterize the common parts of
 # these jobs and factor out only the differing parts.
   test-gem-installation-centos:
     # Enable the job
-    needs: package
+    needs: [ package, compute-tag]
     runs-on: ubuntu-latest
     container:
       # Use stable tag on master, branch-based tag on feature branches
-      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || format('ghcr.io/{0}/fig-ci:centos7.9.2009-{1}', github.repository, github.ref_name) }}
+      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || format('ghcr.io/{0}/fig-ci:centos7.9.2009-{1}', github.repository, needs.compute-tag.outputs.branch_name) }}
       options: --user root
     strategy:
       matrix:
