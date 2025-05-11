@@ -7,7 +7,7 @@ RUN yum install -y epel-release && yum clean all
 
 # install system dependencies
 RUN yum install -y git perl-IPC-Cmd zlib-devel libffi-devel libyaml-devel perl-CPAN \
-    devtoolset-11 devtoolset-11-elfutils-libelf-devel curl
+    devtoolset-11 devtoolset-11-elfutils-libelf-devel curl nodejs
 
 # enable devtoolset by default
 RUN echo "source /opt/rh/devtoolset-11/enable" >> /etc/profile.d/devtoolset-11.sh
