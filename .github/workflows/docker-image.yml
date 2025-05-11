@@ -2,7 +2,7 @@ name: build ci docker images
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
     paths:
       - 'docker/ci/**'
   workflow_dispatch: # manual trigger option
