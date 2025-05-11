@@ -8,7 +8,7 @@ on:
   workflow_dispatch: # manual trigger option
 
 jobs:
-  build-centos:
+  build-centos7:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,11 +24,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: build and push centos image
+      - name: build and push centos 7.9.2009 image
         uses: docker/build-push-action@v4
         with:
-          context: ./docker/ci/centos
+          context: ./docker/ci/centos7.9.2009
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/ci-centos:latest
-            ghcr.io/${{ github.repository }}/ci-centos:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/fig-ci:centos7.9.2009
+            ghcr.io/${{ github.repository }}/fig-ci:centos7.9.2009-${{ github.sha }}

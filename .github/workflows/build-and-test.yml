@@ -216,7 +216,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       # Use our custom docker image
-      image: ghcr.io/${{ github.repository }}/ci-centos:latest
+      image: ghcr.io/${{ github.repository }}/fig-ci:centos7.9.2009
       options: --user root
     strategy:
       matrix:

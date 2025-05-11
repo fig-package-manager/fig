@@ -3,7 +3,7 @@
 this directory contains docker images used for continuous integration and testing in oss-fig.
 
 currently available images:
-- `centos` - centos 7.9 image for testing gem installation
+- `centos7.9.2009` - centos 7.9.2009 image for testing gem installation
 
 ## usage
 
@@ -14,7 +14,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/your-org/oss-fig/ci-centos:latest
+      image: ghcr.io/your-org/oss-fig/fig-ci:centos7.9.2009
 ```
 
 ## rebuilding
