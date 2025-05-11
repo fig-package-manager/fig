@@ -24,7 +24,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      # Determine if we're on master branch
+      # Determine branch name
       - name: Set branch environment variables
         id: branch_env
         run: |
@@ -39,4 +39,4 @@ jobs:
           push: true
           tags: |
             ${{ steps.branch_env.outputs.is_master == 'true' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || '' }}
-            ghcr.io/${{ github.repository }}/fig-ci:centos7.9.2009-${{ github.sha }}
+            ghcr.io/${{ github.repository }}/fig-ci:centos7.9.2009-${{ steps.branch_env.outputs.branch_name }}

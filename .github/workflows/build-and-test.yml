@@ -215,8 +215,8 @@ jobs:
     needs: package
     runs-on: ubuntu-latest
     container:
-      # Use stable tag on master, SHA-based tag on branches
-      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || format('ghcr.io/{0}/fig-ci:centos7.9.2009-{1}', github.repository, github.sha) }}
+      # Use stable tag on master, branch-based tag on feature branches
+      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || format('ghcr.io/{0}/fig-ci:centos7.9.2009-{1}', github.repository, github.ref_name) }}
       options: --user root
     strategy:
       matrix:
