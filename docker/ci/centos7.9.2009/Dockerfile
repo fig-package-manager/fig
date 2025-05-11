@@ -31,8 +31,8 @@ ENV PATH="${ASDF_DATA_DIR}/bin:${ASDF_DATA_DIR}/shims:${PATH}"
 # install ruby versions
 RUN asdf plugin add ruby && \
     asdf install ruby 3.1.2 && \
-    asdf install ruby 3.3.0 && \
-    asdf global ruby 3.3.0
+    asdf install ruby 3.3.7
+RUN asdf set -u ruby 3.3.7
 
 # profile.d scripts for interactive shells
 RUN echo "PATH=${ASDF_DATA_DIR}/shims:${ASDF_DATA_DIR}/bin:\$PATH" >> /etc/profile.d/asdf.sh

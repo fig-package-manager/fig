@@ -52,8 +52,8 @@ jobs:
           - ubuntu-20.04  # LTS
           - ubuntu-22.04  # Current LTS
         ruby:
-          - 3.1.2  # Minimum supported
-          - 3.3    # Latest stable
+          - "3.1.2"  # Minimum supported
+          - "3.3.7"  # Latest stable
         include:
           # Windows builds for both MinGW variants
           - os: windows-2022
@@ -105,7 +105,7 @@ jobs:
     strategy:
       matrix:
         ruby:
-          - 3.1.2  # Build with minimum supported Ruby version for widest compatibility
+          - "3.1.2"  # Build with minimum supported Ruby version for widest compatibility
 
     steps:
       - uses: actions/checkout@v3
@@ -193,7 +193,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: '3.3.7'
           bundler: '2.6.1'
           rubygems: '3.6.1'
 
@@ -222,7 +222,7 @@ jobs:
       matrix:
         ruby-version:
           - "3.1.2"
-          - "3.3.0"
+          - "3.3.7"
     steps:
       - name: Download gem
         uses: actions/download-artifact@v4
@@ -257,8 +257,8 @@ jobs:
           - ubuntu:22.04
           - ubuntu:24.04
         ruby:
-          - 3.1.2
-          - 3.3
+          - "3.1.2"
+          - "3.3.7"
     steps:
       - name: Install packages required by github actions and ruby itself
         # ensure apt-get doesn't stop to ask questions
