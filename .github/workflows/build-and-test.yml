@@ -211,7 +211,7 @@ jobs:
   compute-tag:
     runs-on: ubuntu-latest
     outputs:
-      IMAGE_TAG: ${{ steps.compute-tag.outputs.branch_name }}
+      BRANCH_NAME: ${{ steps.branch_env.outputs.branch_name }}
     steps:
       - name: Set branch environment variables
         id: branch_env
@@ -220,6 +220,15 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "is_master=${{ github.ref == 'refs/heads/master' }}" >> $GITHUB_OUTPUT
 
+  whats-my-tag:
+    needs: compute-tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: 
+        run: |
+          echo "branch name=${{ needs.compute-tag.outputs.BRANCH_NAME }}"
+          echo "image=${{ format('ghcr.io/{0}/fig-ci:centos7.9.2009-{1}', github.repository, needs.compute-tag.outputs.BRANCH_NAME) }}"
+          
 # Need to figure out how to parameterize the common parts of
 # these jobs and factor out only the differing parts.
   test-gem-installation-centos:
@@ -228,7 +237,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       # Use stable tag on master, branch-based tag on feature branches
-      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || format('ghcr.io/{0}/fig-ci:centos7.9.2009-{1}', github.repository, needs.compute-tag.outputs.branch_name) }}
+      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || format('ghcr.io/{0}/fig-ci:centos7.9.2009-{1}', github.repository, needs.compute-tag.outputs.BRANCH_NAME) }}
       options: --user root
     strategy:
       matrix:
