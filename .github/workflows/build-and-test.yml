@@ -264,7 +264,7 @@ jobs:
       - name: Install and test gem with specific Ruby version
         run: |
           # Switch to the specified Ruby version using asdf
-          asdf local ruby ${{ matrix.ruby-version }}
+          asdf set -u ruby ${{ matrix.ruby-version }}
           
           # Verify Ruby version
           ruby --version
