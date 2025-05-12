@@ -239,17 +239,26 @@ jobs:
       # Use stable tag on master, branch-based tag on feature branches
       image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || format('ghcr.io/{0}/fig-ci:centos7.9.2009-{1}', github.repository, needs.compute-tag.outputs.BRANCH_NAME) }}
       options: --user root
+
     strategy:
       matrix:
         ruby-version:
           - "3.1.2"
           - "3.3.7"
     steps:
-      - name: Download gem
-        uses: actions/download-artifact@v3
-        with:
-          name: fig
-          path: .
+      - name: Install gh cli
+        run: |
+          curl -s https://cli.github.com/packages/rpm/gh-cli.repo -o /etc/yum.repos.d/gh-cli.repo && yum install -y gh
+
+      # Authenticate GH CLI
+      - name: Authenticate GH CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      # Download the artifact
+      - name: Download with gh cli
+        run: |
+          # find the last run’s artifacts for this workflow & job
+          gh run download $GITHUB_RUN_ID --name fig --dir ./
 
       - name: Install and test gem with specific Ruby version
         run: |
