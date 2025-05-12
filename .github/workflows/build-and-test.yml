@@ -276,7 +276,7 @@ jobs:
           # Basic smoke test
           fig help
 
-  test-gem-installation-ubuntu:
+  test-gem-installation-gha:
     needs: package
     runs-on: ubuntu-latest
     container:
@@ -286,12 +286,14 @@ jobs:
         os:
           - ubuntu:22.04
           - ubuntu:24.04
+          - macos-14
         ruby:
           - "3.1.2"
           - "3.3.7"
     steps:
       - name: Install packages required by github actions and ruby itself
         # ensure apt-get doesn't stop to ask questions
+        if: ${{ contains(matrix.os, 'ubuntu') }}
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
