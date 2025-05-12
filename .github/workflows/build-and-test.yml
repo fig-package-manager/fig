@@ -259,7 +259,7 @@ jobs:
       - name: Download with gh cli
         run: |
           # find the last run’s artifacts for this workflow & job
-          gh run download $GITHUB_RUN_ID --name fig --dir ./
+          gh run download $GITHUB_RUN_ID --repo ${{ github.repository }} --name fig --dir ./
 
       - name: Install and test gem with specific Ruby version
         run: |
