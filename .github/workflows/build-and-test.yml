@@ -158,7 +158,6 @@ jobs:
       - name: Set branch environment variables
         id: branch_env
         run: |
-          #BRANCH_NAME=${GITHUB_REF#refs/heads/}
           BRANCH_NAME=${{ github.head_ref || github.ref_name }}
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "is_master=${{ github.ref == 'refs/heads/master' }}" >> $GITHUB_OUTPUT
