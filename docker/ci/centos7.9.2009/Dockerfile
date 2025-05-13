@@ -1,7 +1,10 @@
 FROM centos:centos7.9.2009
 
 # fix repos for EOL centos
-ADD https://raw.githubusercontent.com/AtlasGondal/centos7-eol-repo-fix/main/CentOS-Base.repo /etc/yum.repos.d/
+#ADD https://raw.githubusercontent.com/AtlasGondal/centos7-eol-repo-fix/main/CentOS-Base.repo /etc/yum.repos.d/
+# Vendored file fetched via following command:
+# curl -s -o vendored-centos-eol-repo-fix-base.repo https://raw.githubusercontent.com/AtlasGondal/centos7-eol-repo-fix/main/CentOS-Base.repo
+COPY vendored-centos-eol-repo-fix-base.repo /etc/yum.repos.d/CentOS-Base.repo
 COPY vault-scl.repo /etc/yum.repos.d/
 RUN yum install -y epel-release && yum clean all
 
