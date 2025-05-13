@@ -132,6 +132,7 @@ jobs:
   tebako-package-windows:
     runs-on: windows-2022
     needs: build-gem
+    if: ${{ false }} # disable for now
 
     env:
       artifact: "fig-windows-amd64.exe"
