@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 FROM centos:centos7.9.2009
 
 # fix repos for EOL centos
@@ -46,8 +47,16 @@ ENV CC="/opt/rh/devtoolset-11/root/usr/bin/gcc"
 ENV CXX="/opt/rh/devtoolset-11/root/usr/bin/g++"
 
 # entrypoint wrapper for robust command execution
-RUN echo '#!/bin/bash\nsource /etc/profile.d/asdf.sh\nsource /etc/profile.d/devtoolset-11.sh\nexec "$@"' > /entrypoint.sh && \
-    chmod +x /entrypoint.sh
+#RUN echo "#!/bin/bash\nsource /etc/profile.d/asdf.sh\nsource /etc/profile.d/devtoolset-11.sh\nexec \"$@\"" > /entrypoint.sh && \
+#    chmod +x /entrypoint.sh
+RUN <<'EOR'
+cat <<'EOF' >/entrypoint.sh
+#!/bin/bash
+source /etc/profile
+exec "$@"
+EOF
+chmod +x /entrypoint.sh
+EOR
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/bin/bash"]
