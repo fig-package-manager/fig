@@ -46,7 +46,7 @@ jobs:
         with:
           filters: |
             images:
-              - 'docker/ci/**'
+              - 'images/ci/**'
               - '.github/workflows/build-and-test.yml'
 
   build-centos7:
@@ -78,7 +78,7 @@ jobs:
       - name: build and push centos 7.9.2009 image
         uses: docker/build-push-action@v4
         with:
-          context: ./docker/ci/centos7.9.2009
+          context: ./images/ci/centos7.9.2009
           push: true
           tags: |
             ${{ steps.branch_env.outputs.is_master == 'true' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || '' }}
