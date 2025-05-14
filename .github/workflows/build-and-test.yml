@@ -86,15 +86,19 @@ jobs:
             done
           fi
 
-          echo "Final matrix: $MATRIX"
+          echo "Final matrix before compacting: $MATRIX"
 
-          # Ensure matrix is a valid JSON array
+          # Ensure matrix is a valid JSON array and compact it to a single line
           if ! echo "$MATRIX" | jq empty; then
             echo "Invalid JSON, setting empty array"
             MATRIX="[]"
+          else
+            # Compact JSON to a single line with no extra spaces
+            MATRIX=$(echo "$MATRIX" | jq -c '.')
+            echo "Compacted matrix: $MATRIX"
           fi
     
-          # Ensure MATRIX is valid JSON
+          # Ensure MATRIX is valid JSON with no newlines
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build-ci-images:
