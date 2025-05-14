@@ -101,7 +101,7 @@ jobs:
           # Ensure MATRIX is valid JSON with no newlines
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
-  build-ci-images:
+  build-nongha-images:
     needs: detect-image-change
     if: ${{ needs.detect-image-change.outputs.images == 'true' }}
     runs-on: ubuntu-latest
