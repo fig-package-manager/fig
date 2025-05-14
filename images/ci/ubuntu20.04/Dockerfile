@@ -13,7 +13,7 @@ ENV ASDF_DATA_DIR=/opt/asdf
 RUN echo "PATH=$ASDF_DATA_DIR/shims:\$PATH" >> /etc/profile.d/asdf.sh && . /etc/profile.d/asdf.sh
 RUN asdf plugin add ruby
 
-RUN asdf install ruby 3.3.7 && asdf set -u ruby 3.3.7
+RUN asdf install ruby 3.1.2 && asdf install ruby 3.3.7 && asdf set -u ruby 3.3.7
 
 # Install cmake
 ARG CMAKE_VERSION=3.24.4
