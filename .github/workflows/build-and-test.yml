@@ -34,6 +34,57 @@ env:
   RUBYGEMS_VER: 3.6.1 # Latest stable version tested
 
 jobs:
+  detect-image-change:
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.filters.outputs.images }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: filter for ci image changes
+        id: filters
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            images:
+              - 'docker/ci/**'
+              - '.github/workflows/build-and-test.yml'
+
+  build-centos7:
+    needs: detect-image-change
+    if: ${{ needs.detect-image-change.outputs.images == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: login to ghcr
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Determine branch name
+      - name: Set branch environment variables
+        id: branch_env
+        run: |
+          BRANCH_NAME=${{ github.head_ref || github.ref_name }}
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "is_master=${{ github.ref == 'refs/heads/master' }}" >> $GITHUB_OUTPUT
+          
+      - name: build and push centos 7.9.2009 image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./docker/ci/centos7.9.2009
+          push: true
+          tags: |
+            ${{ steps.branch_env.outputs.is_master == 'true' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || '' }}
+            ghcr.io/${{ github.repository }}/fig-ci:centos7.9.2009-${{ steps.branch_env.outputs.branch_name }}
+
+
   # Package job: Build and verify the gem
   # We only need to package once since this is a pure Ruby gem
   # Running on latest Ubuntu for consistent builds
@@ -175,7 +226,7 @@ jobs:
 # these jobs and factor out only the differing parts.
   test-gem-installation-centos:
     # Enable the job
-    needs: [ package, compute-tag]
+    needs: [ package, compute-tag, detect-image-change, build-centos7 ]
     runs-on: ubuntu-latest
     container:
       # Use stable tag on master, branch-based tag on feature branches
