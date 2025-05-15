@@ -292,14 +292,30 @@ jobs:
     strategy:
       fail-fast: false  # Don't fail the entire matrix if one job fails
       matrix:
-        # This would list all available image directories
-        image:
-          - centos7.9.2009
-          - rocky8
-          - ubuntu20.04
-        ruby-version:
-          - "3.1.2"
-          - "3.3.7"
+        include:
+          # CentOS 7.9 - build from source with --platform ruby
+          - image: centos7.9.2009
+            ruby-version: "3.1.2"
+            gem-platform: "ruby"
+          - image: centos7.9.2009
+            ruby-version: "3.3.7"
+            gem-platform: "ruby"
+            
+          # Rocky Linux 8 - use pre-built binary gems with default platform
+          - image: rocky8
+            ruby-version: "3.1.2"
+            gem-platform: "default"
+          - image: rocky8
+            ruby-version: "3.3.7"
+            gem-platform: "default"
+            
+          # Ubuntu 20.04 - use pre-built binary gems with default platform
+          - image: ubuntu20.04
+            ruby-version: "3.1.2"
+            gem-platform: "default"
+          - image: ubuntu20.04
+            ruby-version: "3.3.7"
+            gem-platform: "default"
     container:
       # Use stable tag on master, branch-based tag on feature branches
       image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:{1}', github.repository, matrix.image) || format('ghcr.io/{0}/fig-ci:{1}-{2}', github.repository, matrix.image, needs.compute-tag.outputs.BRANCH_NAME) }}
@@ -328,8 +344,18 @@ jobs:
           # Verify Ruby version
           ruby --version
           
-          # Install and verify gem
-          gem install ./fig-*.gem --platform ruby --no-document
+          # Install and verify gem with appropriate platform settings
+          # Set platform flag as a shell variable
+          PLATFORM_FLAG=""
+          PLATFORM_MSG="default platform"
+          if [[ "${{ matrix.gem-platform }}" != "default" ]]; then
+            PLATFORM_FLAG="--platform ${{ matrix.gem-platform }}"
+            PLATFORM_MSG="platform: ${{ matrix.gem-platform }}"
+          fi
+          
+          # Use the shell variable in both commands
+          gem install ./fig-*.gem $PLATFORM_FLAG --no-document
+          echo "Installed gem with $PLATFORM_MSG"
           fig --version
           
           # Basic smoke test
