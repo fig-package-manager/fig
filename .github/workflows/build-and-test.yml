@@ -32,30 +32,88 @@ concurrency:
 env:
   BUNDLER_VER: 2.6.1  # Matches production environment
   RUBYGEMS_VER: 3.6.1 # Latest stable version tested
+  # Ruby versions to install in CI images - must match versions in test matrix
+  CI_RUBY_VERSIONS: "3.1.2 3.3.7"  # Space-separated list of versions
+  CI_DEFAULT_RUBY: "3.3.7"         # Version used by default
 
 jobs:
   detect-image-change:
     runs-on: ubuntu-latest
     outputs:
       images: ${{ steps.filters.outputs.images }}
+      image_matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v3
+      
+      # Create filters for all images with a single pattern
       - name: filter for ci image changes
         id: filters
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@v3
         with:
+          list-files: 'json'
           filters: |
             images:
-              - 'docker/ci/**'
+              - 'images/ci/**'
               - '.github/workflows/build-and-test.yml'
+      
+      # Set matrix based on affected image directories
+      - name: set matrix
+        id: set-matrix
+        if: steps.filters.outputs.images == 'true'
+        run: |
+          # Start with empty array
+          MATRIX="[]"
+    
+          # Get list of affected files
+          FILES='${{ steps.filters.outputs.images_files }}'
+    
+          # Check each directory under images/ci
+          for DIR in $(find images/ci -maxdepth 1 -mindepth 1 -type d -exec basename {} \;); do
+            echo "looking at directory $DIR..."
 
-  build-centos7:
+            echo "  FILES = <$FILES>"
+
+            # Check if any file path starts with this directory path
+            if echo "$FILES" | jq -e --arg dir "$DIR" 'map(select(startswith("images/ci/" + $dir + "/"))) | length > 0' >/dev/null; then
+              echo "change detected in image dir $DIR"
+              MATRIX=$(echo "$MATRIX" | jq --arg dir "$DIR" '. += [$dir]')
+            else
+              echo "no changes detected in $DIR"
+            fi
+          done
+    
+          # If workflow file changed but no specific image dir, include all image dirs
+          if [[ $(echo "$FILES" | jq 'map(select(. == ".github/workflows/build-and-test.yml")) | length') -gt 0 && $(echo "$MATRIX" | jq 'length') -eq 0 ]]; then
+            for DIR in $(find images/ci -maxdepth 1 -mindepth 1 -type d -exec basename {} \;); do
+              MATRIX=$(echo "$MATRIX" | jq --arg dir "$DIR" '. += [$dir]')
+            done
+          fi
+
+          echo "Final matrix before compacting: $MATRIX"
+
+          # Ensure matrix is a valid JSON array and compact it to a single line
+          if ! echo "$MATRIX" | jq empty; then
+            echo "Invalid JSON, setting empty array"
+            MATRIX="[]"
+          else
+            # Compact JSON to a single line with no extra spaces
+            MATRIX=$(echo "$MATRIX" | jq -c '.')
+            echo "Compacted matrix: $MATRIX"
+          fi
+    
+          # Ensure MATRIX is valid JSON with no newlines
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  build-nongha-images:
     needs: detect-image-change
     if: ${{ needs.detect-image-change.outputs.images == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        image: ${{ fromJson(needs.detect-image-change.outputs.image_matrix) }}
     
     steps:
       - uses: actions/checkout@v3
@@ -75,14 +133,17 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "is_master=${{ github.ref == 'refs/heads/master' }}" >> $GITHUB_OUTPUT
           
-      - name: build and push centos 7.9.2009 image
+      - name: build and push ${{ matrix.image }} image
         uses: docker/build-push-action@v4
         with:
-          context: ./docker/ci/centos7.9.2009
+          context: ./images/ci/${{ matrix.image }}
           push: true
+          build-args: |
+            RUBY_VERSIONS=${{ env.CI_RUBY_VERSIONS }}
+            DEFAULT_RUBY=${{ env.CI_DEFAULT_RUBY }}
           tags: |
-            ${{ steps.branch_env.outputs.is_master == 'true' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || '' }}
-            ghcr.io/${{ github.repository }}/fig-ci:centos7.9.2009-${{ steps.branch_env.outputs.branch_name }}
+            ${{ steps.branch_env.outputs.is_master == 'true' && format('ghcr.io/{0}/fig-ci:{1}', github.repository, matrix.image) || '' }}
+            ghcr.io/${{ github.repository }}/fig-ci:${{ matrix.image }}-${{ steps.branch_env.outputs.branch_name }}
 
 
   # Package job: Build and verify the gem
@@ -224,33 +285,55 @@ jobs:
           
 # Need to figure out how to parameterize the common parts of
 # these jobs and factor out only the differing parts.
-  test-gem-installation-centos:
+  test-gem-install-nongha:
     # Enable the job
-    needs: [ package, compute-tag, detect-image-change, build-centos7 ]
+    needs: [ package, compute-tag, detect-image-change, build-nongha-images ]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false  # Don't fail the entire matrix if one job fails
+      matrix:
+        include:
+          # CentOS 7.9 - build from source with --platform ruby
+          - image: centos7.9.2009
+            ruby-version: "3.1.2"
+            gem-platform: "ruby"
+          - image: centos7.9.2009
+            ruby-version: "3.3.7"
+            gem-platform: "ruby"
+            
+          # Rocky Linux 8 - use pre-built binary gems with default platform
+          - image: rocky8
+            ruby-version: "3.1.2"
+            gem-platform: "default"
+          - image: rocky8
+            ruby-version: "3.3.7"
+            gem-platform: "default"
+            
+          # Ubuntu 20.04 - use pre-built binary gems with default platform
+          - image: ubuntu20.04
+            ruby-version: "3.1.2"
+            gem-platform: "default"
+          - image: ubuntu20.04
+            ruby-version: "3.3.7"
+            gem-platform: "default"
     container:
       # Use stable tag on master, branch-based tag on feature branches
-      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:centos7.9.2009', github.repository) || format('ghcr.io/{0}/fig-ci:centos7.9.2009-{1}', github.repository, needs.compute-tag.outputs.BRANCH_NAME) }}
+      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:{1}', github.repository, matrix.image) || format('ghcr.io/{0}/fig-ci:{1}-{2}', github.repository, matrix.image, needs.compute-tag.outputs.BRANCH_NAME) }}
       options: --user root
 
-    strategy:
-      matrix:
-        ruby-version:
-          - "3.1.2"
-          - "3.3.7"
-    steps:
-      - name: Install gh cli
-        run: |
-          curl -s https://cli.github.com/packages/rpm/gh-cli.repo -o /etc/yum.repos.d/gh-cli.repo && yum install -y gh
+    defaults:
+      run:
+        shell: bash -l {0}
 
-      # Authenticate GH CLI
+    steps:
+      # GitHub CLI is now pre-installed in the Docker images
       - name: Authenticate GH CLI
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
       # Download the artifact
       - name: Download with gh cli
         run: |
-          # find the last run’s artifacts for this workflow & job
+          # find the last run's artifacts for this workflow & job
           gh run download $GITHUB_RUN_ID --repo ${{ github.repository }} --name fig --dir ./
 
       - name: Install and test gem with specific Ruby version
@@ -261,14 +344,24 @@ jobs:
           # Verify Ruby version
           ruby --version
           
-          # Install and verify gem
-          gem install ./fig-*.gem --platform ruby --no-document
+          # Install and verify gem with appropriate platform settings
+          # Set platform flag as a shell variable
+          PLATFORM_FLAG=""
+          PLATFORM_MSG="default platform"
+          if [[ "${{ matrix.gem-platform }}" != "default" ]]; then
+            PLATFORM_FLAG="--platform ${{ matrix.gem-platform }}"
+            PLATFORM_MSG="platform: ${{ matrix.gem-platform }}"
+          fi
+          
+          # Use the shell variable in both commands
+          gem install ./fig-*.gem $PLATFORM_FLAG --no-document
+          echo "Installed gem with $PLATFORM_MSG"
           fig --version
           
           # Basic smoke test
           fig help
 
-  test-gem-installation-ubuntu:
+  test-gem-install-gha:
     needs: package
     runs-on: ubuntu-latest
     container:

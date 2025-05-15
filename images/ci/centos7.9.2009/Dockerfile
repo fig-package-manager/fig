@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 FROM centos:centos7.9.2009
 
 # fix repos for EOL centos
@@ -31,11 +32,16 @@ RUN cd /usr/local/bin && tar xzf /tmp/asdf.tgz
 ENV ASDF_DATA_DIR=/opt/asdf
 ENV PATH="${ASDF_DATA_DIR}/bin:${ASDF_DATA_DIR}/shims:${PATH}"
 
-# install ruby versions
+# Define Ruby versions as build args
+ARG RUBY_VERSIONS="3.1.2 3.3.7"
+ARG DEFAULT_RUBY="3.3.7"
+
+# Install specified Ruby versions
 RUN asdf plugin add ruby && \
-    asdf install ruby 3.1.2 && \
-    asdf install ruby 3.3.7
-RUN asdf set -u ruby 3.3.7
+    for version in $RUBY_VERSIONS; do \
+      asdf install ruby $version; \
+    done
+RUN asdf set -u ruby $DEFAULT_RUBY
 
 # profile.d scripts for interactive shells
 RUN echo "PATH=${ASDF_DATA_DIR}/shims:${ASDF_DATA_DIR}/bin:\$PATH" >> /etc/profile.d/asdf.sh
@@ -45,9 +51,24 @@ ENV LD_LIBRARY_PATH="/opt/rh/devtoolset-11/root/usr/lib64:/opt/rh/devtoolset-11/
 ENV CC="/opt/rh/devtoolset-11/root/usr/bin/gcc"
 ENV CXX="/opt/rh/devtoolset-11/root/usr/bin/g++"
 
+# Install GitHub CLI (distro-agnostic method)
+ARG GH_VERSION=2.46.0
+RUN mkdir -p /usr/local/gh && \
+    curl -Ls https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz | \
+    tar xz -C /usr/local/gh --strip-components 1 && \
+    ln -s /usr/local/gh/bin/gh /usr/bin/gh
+
 # entrypoint wrapper for robust command execution
-RUN echo '#!/bin/bash\nsource /etc/profile.d/asdf.sh\nsource /etc/profile.d/devtoolset-11.sh\nexec "$@"' > /entrypoint.sh && \
-    chmod +x /entrypoint.sh
+#RUN echo "#!/bin/bash\nsource /etc/profile.d/asdf.sh\nsource /etc/profile.d/devtoolset-11.sh\nexec \"$@\"" > /entrypoint.sh && \
+#    chmod +x /entrypoint.sh
+RUN <<'EOR'
+cat <<'EOF' >/entrypoint.sh
+#!/bin/bash
+source /etc/profile
+exec "$@"
+EOF
+chmod +x /entrypoint.sh
+EOR
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/bin/bash"]
