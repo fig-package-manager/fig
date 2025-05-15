@@ -32,6 +32,9 @@ concurrency:
 env:
   BUNDLER_VER: 2.6.1  # Matches production environment
   RUBYGEMS_VER: 3.6.1 # Latest stable version tested
+  # Ruby versions to install in CI images - must match versions in test matrix
+  CI_RUBY_VERSIONS: "3.1.2 3.3.7"  # Space-separated list of versions
+  CI_DEFAULT_RUBY: "3.3.7"         # Version used by default
 
 jobs:
   detect-image-change:
@@ -135,6 +138,9 @@ jobs:
         with:
           context: ./images/ci/${{ matrix.image }}
           push: true
+          build-args: |
+            RUBY_VERSIONS=${{ env.CI_RUBY_VERSIONS }}
+            DEFAULT_RUBY=${{ env.CI_DEFAULT_RUBY }}
           tags: |
             ${{ steps.branch_env.outputs.is_master == 'true' && format('ghcr.io/{0}/fig-ci:{1}', github.repository, matrix.image) || '' }}
             ghcr.io/${{ github.repository }}/fig-ci:${{ matrix.image }}-${{ steps.branch_env.outputs.branch_name }}
