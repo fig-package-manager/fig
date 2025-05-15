@@ -300,11 +300,7 @@ jobs:
       options: --user root
 
     steps:
-      - name: Install gh cli
-        run: |
-          curl -s https://cli.github.com/packages/rpm/gh-cli.repo -o /etc/yum.repos.d/gh-cli.repo && yum install -y gh
-
-      # Authenticate GH CLI
+      # GitHub CLI is now pre-installed in the Docker images
       - name: Authenticate GH CLI
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 

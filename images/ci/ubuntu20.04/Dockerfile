@@ -20,6 +20,13 @@ ARG CMAKE_VERSION=3.24.4
 RUN mkdir -p /usr/local/cmake && curl -Ls https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz | tar xz -C /usr/local/cmake --strip-components 1 && \
     ln -s /usr/local/cmake/bin/cmake /usr/bin
 
+# Install GitHub CLI (distro-agnostic method)
+ARG GH_VERSION=2.46.0
+RUN mkdir -p /usr/local/gh && \
+    curl -Ls https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz | \
+    tar xz -C /usr/local/gh --strip-components 1 && \
+    ln -s /usr/local/gh/bin/gh /usr/bin/gh
+
 # entrypoint wrapper for robust command execution
 RUN <<'EOR'
 cat <<'EOF' >/entrypoint.sh
