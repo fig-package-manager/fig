@@ -281,7 +281,7 @@ jobs:
 # these jobs and factor out only the differing parts.
   test-gem-install-nongha:
     # Enable the job
-    needs: [ package, compute-tag ]
+    needs: [ package, compute-tag, detect-image-change, build-nongha-images ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false  # Don't fail the entire matrix if one job fails
