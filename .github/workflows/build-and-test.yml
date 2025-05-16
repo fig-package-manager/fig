@@ -370,15 +370,6 @@ jobs:
           - "3.1.2"
           - "3.3.7"
     steps:
-      - name: Install packages required by github actions and ruby itself
-        # ensure apt-get doesn't stop to ask questions
-        if: ${{ contains(matrix.os, 'ubuntu') }}
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          apt-get update
-          apt-get install -y libyaml-0-2 openssl nodejs build-essential
-
       - name: Download gem
         uses: actions/download-artifact@v4
         with:
