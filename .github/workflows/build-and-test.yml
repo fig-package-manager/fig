@@ -361,6 +361,7 @@ jobs:
     needs: package
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false  # Don't fail the entire matrix if one job fails
       matrix:
         os:
           - ubuntu-latest
