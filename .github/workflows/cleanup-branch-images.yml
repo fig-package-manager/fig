@@ -1,0 +1,49 @@
+name: cleanup-branch-images
+
+on:
+  delete:
+    branches:
+      - '**'  # Any branch deletion
+      
+jobs:
+  cleanup:
+    if: github.event.ref_type == 'branch'  # Only run on branch deletions
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Delete branch-specific container images
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.event.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "Cleaning up container images for deleted branch: $BRANCH"
+          
+          # Split repository into owner and repo name
+          OWNER=$(echo $REPO | cut -d'/' -f1)
+          REPO_NAME=$(echo $REPO | cut -d'/' -f2)
+          
+          # Get all image versions with matching branch tag
+          echo "Looking for images tagged with branch: $BRANCH"
+          
+          # Use GitHub API to list all versions
+          VERSIONS=$(gh api \
+            --paginate \
+            /orgs/$OWNER/packages/container/fig-ci/versions \
+            -q '.[] | select(.metadata.container.tags[] | endswith("-'$BRANCH'")) | .id')
+          
+          if [ -z "$VERSIONS" ]; then
+            echo "No matching image versions found for branch $BRANCH"
+            exit 0
+          fi
+          
+          # Delete each matching version
+          for VERSION_ID in $VERSIONS; do
+            echo "Deleting image version: $VERSION_ID for branch $BRANCH"
+            gh api \
+              --method DELETE \
+              /orgs/$OWNER/packages/container/fig-ci/versions/$VERSION_ID
+          done
+          
+          echo "Cleanup complete for branch: $BRANCH"
