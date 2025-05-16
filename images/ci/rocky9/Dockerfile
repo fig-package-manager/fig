@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 FROM rockylinux:9
 
-RUN yum install --enablerepo=powertools -y git @Development perl-IPC-Cmd zlib-devel libffi-devel libyaml-devel perl-Pod-Html && yum clean all
+RUN yum install --enablerepo=devel -y git @Development perl-IPC-Cmd zlib-devel libffi-devel libyaml-devel perl-FindBin perl-Pod-Html && yum clean all
 
 ADD https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-amd64.tar.gz /tmp/asdf.tgz
 RUN cd /usr/local/bin && tar xzf /tmp/asdf.tgz
