@@ -363,14 +363,13 @@ jobs:
 
   test-gem-install-gha:
     needs: package
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os:
-          - ubuntu:22.04
-          - ubuntu:24.04
+          - ubuntu-latest
+          - windows-2022
+          - macos-14
         ruby:
           - "3.1.2"
           - "3.3.7"
@@ -397,3 +396,8 @@ jobs:
       - run: |
           gem update --system $RUBYGEMS_VER
           gem install ./fig-*.gem --no-document
+          fig --version
+          
+          # Basic smoke test
+          fig help
+          
