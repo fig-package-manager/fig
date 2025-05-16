@@ -37,94 +37,53 @@ env:
   CI_DEFAULT_RUBY: "3.3.7"         # Version used by default
 
 jobs:
-  detect-image-change:
+  # Find all image directories dynamically
+  find-image-dirs:
     runs-on: ubuntu-latest
     outputs:
-      images: ${{ steps.filters.outputs.images }}
-      image_matrix: ${{ steps.set-matrix.outputs.matrix }}
+      image_dirs: ${{ steps.find-dirs.outputs.dirs }}
     steps:
       - uses: actions/checkout@v3
       
-      # Create filters for all images with a single pattern
-      - name: filter for ci image changes
-        id: filters
-        uses: dorny/paths-filter@v3
-        with:
-          list-files: 'json'
-          filters: |
-            images:
-              - 'images/ci/**'
-              - '.github/workflows/build-and-test.yml'
-      
-      # Set matrix based on affected image directories
-      - name: set matrix
-        id: set-matrix
-        if: steps.filters.outputs.images == 'true'
+      - name: Find image directories
+        id: find-dirs
         run: |
-          # Start with empty array
-          MATRIX="[]"
-    
-          # Get list of affected files
-          FILES='${{ steps.filters.outputs.images_files }}'
-    
-          # Check each directory under images/ci
-          for DIR in $(find images/ci -maxdepth 1 -mindepth 1 -type d -exec basename {} \;); do
-            echo "looking at directory $DIR..."
-
-            echo "  FILES = <$FILES>"
-
-            # Check if any file path starts with this directory path
-            if echo "$FILES" | jq -e --arg dir "$DIR" 'map(select(startswith("images/ci/" + $dir + "/"))) | length > 0' >/dev/null; then
-              echo "change detected in image dir $DIR"
-              MATRIX=$(echo "$MATRIX" | jq --arg dir "$DIR" '. += [$dir]')
-            else
-              echo "no changes detected in $DIR"
-            fi
-          done
-    
-          # If workflow file changed but no specific image dir, include all image dirs
-          if [[ $(echo "$FILES" | jq 'map(select(. == ".github/workflows/build-and-test.yml")) | length') -gt 0 && $(echo "$MATRIX" | jq 'length') -eq 0 ]]; then
-            for DIR in $(find images/ci -maxdepth 1 -mindepth 1 -type d -exec basename {} \;); do
-              MATRIX=$(echo "$MATRIX" | jq --arg dir "$DIR" '. += [$dir]')
-            done
-          fi
-
-          echo "Final matrix before compacting: $MATRIX"
-
-          # Ensure matrix is a valid JSON array and compact it to a single line
-          if ! echo "$MATRIX" | jq empty; then
-            echo "Invalid JSON, setting empty array"
-            MATRIX="[]"
-          else
-            # Compact JSON to a single line with no extra spaces
-            MATRIX=$(echo "$MATRIX" | jq -c '.')
-            echo "Compacted matrix: $MATRIX"
-          fi
-    
-          # Ensure MATRIX is valid JSON with no newlines
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          # Find all subdirectories of images/ci
+          DIRS=$(find images/ci -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "dirs=$DIRS" >> $GITHUB_OUTPUT
+          echo "Found dirs: $DIRS"
 
   build-nongha-images:
-    needs: detect-image-change
-    if: ${{ needs.detect-image-change.outputs.images == 'true' }}
+    needs: find-image-dirs
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+  
+    # Use dynamically generated image list
     strategy:
       matrix:
-        image: ${{ fromJson(needs.detect-image-change.outputs.image_matrix) }}
-    
+        image: ${{ fromJson(needs.find-image-dirs.outputs.image_dirs) }}
+  
     steps:
       - uses: actions/checkout@v3
-      
+    
+      # Check if this specific image directory has changes
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            image_changed:
+              - 'images/ci/${{ matrix.image }}/**'
+              - '.github/workflows/build-and-test.yml'
+    
       - name: login to ghcr
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+    
       # Determine branch name
       - name: Set branch environment variables
         id: branch_env
@@ -132,8 +91,25 @@ jobs:
           BRANCH_NAME=${{ github.head_ref || github.ref_name }}
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "is_master=${{ github.ref == 'refs/heads/master' }}" >> $GITHUB_OUTPUT
-          
-      - name: build and push ${{ matrix.image }} image
+    
+      # Pull and retag if this image didn't change
+      - name: Pull and retag master image
+        id: pull_retag
+        if: steps.changes.outputs.image_changed != 'true'
+        run: |
+          if docker pull ghcr.io/${{ github.repository }}/fig-ci:${{ matrix.image }}; then
+            echo "Using master image for ${{ matrix.image }}"
+            docker tag ghcr.io/${{ github.repository }}/fig-ci:${{ matrix.image }} ghcr.io/${{ github.repository }}/fig-ci:${{ matrix.image }}-${{ steps.branch_env.outputs.branch_name }}
+            docker push ghcr.io/${{ github.repository }}/fig-ci:${{ matrix.image }}-${{ steps.branch_env.outputs.branch_name }}
+            echo "retagged=true" >> $GITHUB_OUTPUT
+          else
+            echo "Master image not found for ${{ matrix.image }}, falling back to build"
+            echo "retagged=false" >> $GITHUB_OUTPUT
+          fi
+    
+      # Only build if image changed or retag failed
+      - name: Build and push image
+        if: steps.changes.outputs.image_changed == 'true' || steps.pull_retag.outputs.retagged != 'true'
         uses: docker/build-push-action@v4
         with:
           context: ./images/ci/${{ matrix.image }}
@@ -287,7 +263,7 @@ jobs:
 # these jobs and factor out only the differing parts.
   test-gem-install-nongha:
     # Enable the job
-    needs: [ package, compute-tag, detect-image-change, build-nongha-images ]
+    needs: [ package, compute-tag, find-image-dirs, build-nongha-images ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false  # Don't fail the entire matrix if one job fails
