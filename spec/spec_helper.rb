@@ -32,12 +32,14 @@ CURRENT_DIRECTORY = FIG_SPEC_BASE_DIRECTORY + '/current-directory'
 USER_HOME         = FIG_SPEC_BASE_DIRECTORY + '/user-home'
 FIG_HOME          = FIG_SPEC_BASE_DIRECTORY + '/fig-home'
 FIG_REMOTE_DIR    = FIG_SPEC_BASE_DIRECTORY + '/remote'
-# For backward compatibility with existing tests
+# FIG_REMOTE_DIR     ||= File.join(FIG_SPEC_BASE_DIRECTORY, 'repository')
 FIG_REMOTE_URL    = %Q<file://#{FIG_REMOTE_DIR}>
 
-# For split URL behavior
-FIG_CONSUME_URL   = %Q<file://#{FIG_REMOTE_DIR}>
-FIG_PUBLISH_URL   = %Q<file://#{FIG_REMOTE_DIR}>
+# For split URL behavior - using distinct directories to catch incorrect URL usage
+FIG_CONSUME_DIR   ||= File.join(FIG_SPEC_BASE_DIRECTORY, 'consume-repository')
+FIG_PUBLISH_DIR   ||= File.join(FIG_SPEC_BASE_DIRECTORY, 'publish-repository')
+FIG_CONSUME_URL   = %Q<file://#{FIG_CONSUME_DIR}>
+FIG_PUBLISH_URL   = %Q<file://#{FIG_PUBLISH_DIR}>
 
 FIG_DIRECTORY     ||= File.expand_path(File.dirname(__FILE__)) + '/../bin'
 FIG_COMMAND_CLASS ||= Fig::Command
@@ -269,6 +271,16 @@ end
 def cleanup_home_and_remote()
   FileUtils.rm_rf(FIG_HOME)
   FileUtils.rm_rf(FIG_REMOTE_DIR)
+  
+  # Clean up split URL directories
+  FileUtils.rm_rf(FIG_CONSUME_DIR)
+  FileUtils.rm_rf(FIG_PUBLISH_DIR)
+  
+  # Create base directories for split URLs
+  FileUtils.mkdir_p(FIG_CONSUME_DIR)
+  FileUtils.mkdir_p(File.join(FIG_CONSUME_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
+  FileUtils.mkdir_p(FIG_PUBLISH_DIR)
+  FileUtils.mkdir_p(File.join(FIG_PUBLISH_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
 
   return
 end
@@ -284,8 +296,23 @@ def set_local_repository_format_to_future_version()
 end
 
 def set_remote_repository_format_to_future_version()
+  # Set future version in legacy remote dir
   version_file = File.join(FIG_REMOTE_DIR, Fig::Repository::VERSION_FILE_NAME)
   FileUtils.mkdir_p(FIG_REMOTE_DIR)
+  File.open(version_file, 'w') {
+    |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
+  }
+  
+  # Set future version in consume dir
+  version_file = File.join(FIG_CONSUME_DIR, Fig::Repository::VERSION_FILE_NAME)
+  FileUtils.mkdir_p(FIG_CONSUME_DIR)
+  File.open(version_file, 'w') {
+    |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
+  }
+  
+  # Set future version in publish dir
+  version_file = File.join(FIG_PUBLISH_DIR, Fig::Repository::VERSION_FILE_NAME)
+  FileUtils.mkdir_p(FIG_PUBLISH_DIR)
   File.open(version_file, 'w') {
     |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
   }

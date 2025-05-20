@@ -11,9 +11,9 @@ describe 'Parser' do
   def new_configuration
     application_configuration = Fig::ApplicationConfiguration.new
 
-    application_configuration.base_whitelisted_url = 'http://example/'
-    application_configuration.remote_consume_url = 'http://example/'
-    application_configuration.remote_publish_url = 'http://example/'
+    application_configuration.base_whitelisted_url = 'http://example.com/consume/'
+    application_configuration.remote_consume_url = 'http://example.com/consume/'
+    application_configuration.remote_publish_url = 'http://example.com/publish/'
 
     return application_configuration
   end
