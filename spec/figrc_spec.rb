@@ -121,4 +121,22 @@ describe 'FigRC' do
     configuration = invoke_find tempfile.path, nil
     configuration['foo'].should == 'loaded from repository'
   end
+
+  it 'ignores unknown settings without errors' do
+    tempfile = Tempfile.new('unknown_settings_test')
+    tempfile << %Q< { "foo": "bar", "fig_2x_setting": "future setting value" } >
+    tempfile.close
+
+    # This should not raise any errors despite unknown setting
+    configuration = invoke_find(tempfile.path, nil)
+    
+    # Known setting works
+    configuration['foo'].should == 'bar'
+    
+    # Unknown setting is accessible but would be ignored by code not looking for it
+    configuration['fig_2x_setting'].should == 'future setting value'
+    
+    # Completely nonexistent setting returns nil
+    configuration['nonexistent'].should be_nil
+  end
 end
