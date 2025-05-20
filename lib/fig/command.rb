@@ -243,13 +243,19 @@ class Fig::Command
       @options.no_remote_figrc?
     )
 
-    if \
-          remote_operation_necessary? \
-      &&  @application_configuration.remote_repository_url.nil?
-
-      raise Fig::UserInputError.new(
-        'Please define the FIG_REMOTE_URL environment variable.'
-      )
+    if remote_operation_necessary?
+      # Check if any action is a publishing operation
+      publishing_operation = @options.actions.any? {|action| action.publish?}
+      
+      if publishing_operation && @application_configuration.remote_publish_url.nil?
+        raise Fig::UserInputError.new(
+          'Please define the FIG_PUBLISH_URL environment variable for publishing operations.'
+        )
+      elsif !publishing_operation && @application_configuration.remote_consume_url.nil?
+        raise Fig::UserInputError.new(
+          'Please define the FIG_CONSUME_URL environment variable for repository operations.'
+        )
+      end
     end
 
     return
@@ -261,7 +267,7 @@ class Fig::Command
       @options,
       @operating_system,
       @options.home(),
-      @application_configuration.remote_repository_url,
+      nil, # remote_repository_url - no longer used, passing nil for compatibility
       @parser,
       @publish_listeners,
     )
