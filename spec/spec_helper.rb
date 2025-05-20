@@ -32,7 +32,12 @@ CURRENT_DIRECTORY = FIG_SPEC_BASE_DIRECTORY + '/current-directory'
 USER_HOME         = FIG_SPEC_BASE_DIRECTORY + '/user-home'
 FIG_HOME          = FIG_SPEC_BASE_DIRECTORY + '/fig-home'
 FIG_REMOTE_DIR    = FIG_SPEC_BASE_DIRECTORY + '/remote'
+# For backward compatibility with existing tests
 FIG_REMOTE_URL    = %Q<file://#{FIG_REMOTE_DIR}>
+
+# For split URL behavior
+FIG_CONSUME_URL   = %Q<file://#{FIG_REMOTE_DIR}>
+FIG_PUBLISH_URL   = %Q<file://#{FIG_REMOTE_DIR}>
 
 FIG_DIRECTORY     ||= File.expand_path(File.dirname(__FILE__)) + '/../bin'
 FIG_COMMAND_CLASS ||= Fig::Command
@@ -56,7 +61,12 @@ BASE_FIG_COMMAND_LINE ||= [
 
 ENV['HOME']           = USER_HOME
 ENV['FIG_HOME']       = FIG_HOME
-ENV['FIG_REMOTE_URL'] = FIG_REMOTE_URL
+# Set up new environment variables for tests
+ENV['FIG_CONSUME_URL'] = FIG_CONSUME_URL
+ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
+
+# For older tests that haven't been updated
+# ENV['FIG_REMOTE_URL'] = FIG_REMOTE_URL # Commented out to avoid errors
 ENV['FIG_COVERAGE_ROOT_DIRECTORY'] =
   File.expand_path(File.dirname(__FILE__) + '/..')
 

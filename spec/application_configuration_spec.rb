@@ -12,7 +12,8 @@ describe 'ApplicationConfiguration' do
     config = Fig::ApplicationConfiguration.new
 
     config.base_whitelisted_url  = REPOSITORY_TEST_URL
-    config.remote_repository_url = REPOSITORY_TEST_URL
+    config.remote_consume_url = REPOSITORY_TEST_URL
+    config.remote_publish_url = REPOSITORY_TEST_URL
 
     return config
   end
