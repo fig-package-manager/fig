@@ -268,7 +268,7 @@ def clean_up_test_environment()
   return
 end
 
-def cleanup_home_and_remote()
+def cleanup_home_and_remote(unified: true)
   FileUtils.rm_rf(FIG_HOME)
   FileUtils.rm_rf(FIG_REMOTE_DIR)
   
@@ -277,11 +277,17 @@ def cleanup_home_and_remote()
   FileUtils.rm_rf(FIG_PUBLISH_DIR)
   
   # Create base directories for split URLs
-  FileUtils.mkdir_p(FIG_CONSUME_DIR)
-  FileUtils.mkdir_p(File.join(FIG_CONSUME_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
   FileUtils.mkdir_p(FIG_PUBLISH_DIR)
   FileUtils.mkdir_p(File.join(FIG_PUBLISH_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
 
+  if unified
+    # use symlink to simulate an aggregated artifactory repo 
+    FileUtils.ln_sr(FIG_PUBLISH_DIR, FIG_CONSUME_DIR)
+  else
+    FileUtils.mkdir_p(FIG_CONSUME_DIR)
+    FileUtils.mkdir_p(File.join(FIG_CONSUME_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
+  end
+  
   return
 end
 
