@@ -37,6 +37,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'net-netrc',         '~> 0.2.0'
   spec.add_dependency 'net-sftp',          '~> 4.0.0'
   spec.add_dependency 'net-ssh',           '~> 7.3.0'
+  spec.add_dependency 'logger',            '~> 1.6.0'
   spec.add_dependency 'treetop',           '~> 1.6.0'
   spec.add_dependency 'base64', '~> 0.2.0'
   spec.add_dependency 'stringio', '~> 3.1.0'
