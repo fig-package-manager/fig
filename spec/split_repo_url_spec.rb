@@ -25,15 +25,14 @@ describe "Split repository URL behavior" do
       FileUtils.rm_rf(publish_dir)
 
       # Create the "repositories" based on whether we want unified or not
-      FileUtils.mkdir_p(consume_dir)
-      # Initialize metadata in both repos
-      FileUtils.mkdir_p(File.join(consume_dir, Fig::Repository::METADATA_SUBDIRECTORY))
+      FileUtils.mkdir_p(publish_dir)
+      FileUtils.mkdir_p(File.join(publish_dir, Fig::Repository::METADATA_SUBDIRECTORY))
 
       if unified
-        FileUtils.ln_s(consume_dir, publish_dir)
+        FileUtils.ln_sr(publish_dir, consume_dir)
       else
-        FileUtils.mkdir_p(publish_dir)
-        FileUtils.mkdir_p(File.join(publish_dir, Fig::Repository::METADATA_SUBDIRECTORY))
+        FileUtils.mkdir_p(consume_dir)
+        FileUtils.mkdir_p(File.join(consume_dir, Fig::Repository::METADATA_SUBDIRECTORY))
       end
 
       return consume_dir, publish_dir
@@ -80,7 +79,7 @@ describe "Split repository URL behavior" do
       ENV['FIG_PUBLISH_URL'] = publish_url
 
       consume_url.should_not == publish_url
-      FileTest.symlink?(publish_dir).should be true
+      FileTest.symlink?(consume_dir).should be true
       FileTest.identical?(publish_dir, consume_dir)
 
       # Create a simple package
