@@ -14,9 +14,9 @@ require 'fig/statement/path'
 
 def create_local_repository()
   application_config = Fig::ApplicationConfiguration.new()
-  application_config.base_whitelisted_url = FIG_REMOTE_URL
-  application_config.remote_consume_url = FIG_REMOTE_URL
-  application_config.remote_publish_url = FIG_REMOTE_URL
+  application_config.base_whitelisted_url = FIG_CONSUME_URL
+  application_config.remote_consume_url = FIG_CONSUME_URL
+  application_config.remote_publish_url = FIG_PUBLISH_URL
 
   parser = Fig::Parser.new(application_config, false)
 
@@ -25,7 +25,7 @@ def create_local_repository()
     Fig::Command::Options.new,
     Fig::OperatingSystem.new(nil),
     FIG_HOME,
-    FIG_REMOTE_URL,
+    FIG_CONSUME_URL,
     parser,
     [],   # publish listeners
   )
