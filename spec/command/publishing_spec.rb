@@ -481,6 +481,7 @@ describe 'Fig' do
     context 'starting with a clean test environment' do
       before(:each) do
         clean_up_test_environment
+        set_up_test_environment
       end
 
       it 'publishes resource to remote repository' do
