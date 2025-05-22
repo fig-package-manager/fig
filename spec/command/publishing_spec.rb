@@ -302,7 +302,7 @@ describe 'Fig' do
         END
         fig(%w<--publish foo/1.2.3>, input)
         fail unless File.exist? FIG_HOME + '/packages/foo/1.2.3/.fig'
-        fail unless File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail unless File.exist? FIG_CONSUME_DIR + '/foo/1.2.3/.fig'
         fig(%w<--update --include foo/1.2.3 --get FOO>)[0].should == 'SHEEP'
 
         input = <<-END
@@ -497,7 +497,7 @@ describe 'Fig' do
         END
         fig(%w<--publish foo/1.2.3>, input)
         fail unless File.exist? FIG_HOME + '/packages/foo/1.2.3/.fig'
-        fail unless File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail unless File.exist? FIG_CONSUME_DIR + '/foo/1.2.3/.fig'
         fig(%w<--update --include foo/1.2.3 -- hello.bat>)[0].should == 'bar'
       end
 
@@ -509,7 +509,7 @@ describe 'Fig' do
         end
         fig(%w<--publish foo/1.2.3 --resource bin/hello.bat --append PATH=@/bin>)
         fail unless File.exist? FIG_HOME + '/packages/foo/1.2.3/.fig'
-        fail unless File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail unless File.exist? FIG_CONSUME_DIR + '/foo/1.2.3/.fig'
         fig(%w<--update --include foo/1.2.3 -- hello.bat>)[0].should == 'bar'
       end
 
@@ -529,7 +529,7 @@ describe 'Fig' do
             --append PATH=@/bin
           >
         )
-        fail if File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail if File.exist? FIG_CONSUME_DIR + '/foo/1.2.3/.fig'
         fig(
           %w<--update-if-missing --include foo/1.2.3 -- hello.bat>
         )[0].should == 'bar'
@@ -564,7 +564,7 @@ describe 'Fig' do
             --append PATH=@/bin
           >
         )
-        fail if File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail if File.exist? FIG_CONSUME_DIR + '/foo/1.2.3/.fig'
         fig(
           %w<
             --update-if-missing
@@ -586,7 +586,7 @@ describe 'Fig' do
             --append PATH=@/bin
           >
         )
-        fail if File.exist? FIG_REMOTE_DIR + '/foo/1.2.3/.fig'
+        fail if File.exist? FIG_CONSUME_DIR + '/foo/1.2.3/.fig'
         fig(%w<--update-if-missing --include foo/1.2.3 -- hello.bat>)[0].should ==
           'cheese'
       end
