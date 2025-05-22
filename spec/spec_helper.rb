@@ -31,13 +31,13 @@ CURRENT_DIRECTORY = FIG_SPEC_BASE_DIRECTORY + '/current-directory'
 
 USER_HOME         = FIG_SPEC_BASE_DIRECTORY + '/user-home'
 FIG_HOME          = FIG_SPEC_BASE_DIRECTORY + '/fig-home'
-FIG_REMOTE_DIR    = FIG_SPEC_BASE_DIRECTORY + '/remote'
+#FIG_REMOTE_DIR    = FIG_SPEC_BASE_DIRECTORY + '/remote'
 # FIG_REMOTE_DIR     ||= File.join(FIG_SPEC_BASE_DIRECTORY, 'repository')
-FIG_REMOTE_URL    = %Q<file://#{FIG_REMOTE_DIR}>
+#FIG_REMOTE_URL    = %Q<file://#{FIG_REMOTE_DIR}>
 
 # For split URL behavior - using distinct directories to catch incorrect URL usage
-FIG_CONSUME_DIR   ||= File.join(FIG_SPEC_BASE_DIRECTORY, 'consume-repository')
-FIG_PUBLISH_DIR   ||= File.join(FIG_SPEC_BASE_DIRECTORY, 'publish-repository')
+FIG_CONSUME_DIR   = File.join(FIG_SPEC_BASE_DIRECTORY, 'remote')
+FIG_PUBLISH_DIR   = File.join(FIG_SPEC_BASE_DIRECTORY, 'publish')
 FIG_CONSUME_URL   = %Q<file://#{FIG_CONSUME_DIR}>
 FIG_PUBLISH_URL   = %Q<file://#{FIG_PUBLISH_DIR}>
 
@@ -244,16 +244,17 @@ def set_up_test_environment()
   FileUtils.mkdir_p CURRENT_DIRECTORY
   FileUtils.mkdir_p USER_HOME
   FileUtils.mkdir_p FIG_HOME
-  FileUtils.mkdir_p FIG_REMOTE_DIR
+  FileUtils.mkdir_p FIG_PUBLISH_DIR
+  FileUtils.ln_s FIG_PUBLISH_DIR, FIG_CONSUME_DIR
 
   FileUtils.touch FIG_FILE_GUARANTEED_TO_EXIST
 
   metadata_directory =
-    File.join FIG_REMOTE_DIR, Fig::Repository::METADATA_SUBDIRECTORY
+    File.join FIG_PUBLISH_DIR, Fig::Repository::METADATA_SUBDIRECTORY
   FileUtils.mkdir_p metadata_directory
 
   File.open(
-    File.join(FIG_REMOTE_DIR, Fig::FigRC::REPOSITORY_CONFIGURATION), 'w'
+    File.join(FIG_PUBLISH_DIR, Fig::FigRC::REPOSITORY_CONFIGURATION), 'w'
   ) do
     |handle|
     handle.puts '{}' # Empty Javascript/JSON object
@@ -270,7 +271,7 @@ end
 
 def cleanup_home_and_remote(unified: true)
   FileUtils.rm_rf(FIG_HOME)
-  FileUtils.rm_rf(FIG_REMOTE_DIR)
+  #FileUtils.rm_rf(FIG_REMOTE_DIR)
   
   # Clean up split URL directories
   FileUtils.rm_rf(FIG_CONSUME_DIR)
@@ -303,11 +304,11 @@ end
 
 def set_remote_repository_format_to_future_version()
   # Set future version in legacy remote dir
-  version_file = File.join(FIG_REMOTE_DIR, Fig::Repository::VERSION_FILE_NAME)
-  FileUtils.mkdir_p(FIG_REMOTE_DIR)
-  File.open(version_file, 'w') {
-    |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
-  }
+  #version_file = File.join(FIG_REMOTE_DIR, Fig::Repository::VERSION_FILE_NAME)
+  #FileUtils.mkdir_p(FIG_REMOTE_DIR)
+  #File.open(version_file, 'w') {
+  #  |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
+  #}
   
   # Set future version in consume dir
   version_file = File.join(FIG_CONSUME_DIR, Fig::Repository::VERSION_FILE_NAME)
