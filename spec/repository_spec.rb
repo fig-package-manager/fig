@@ -26,6 +26,7 @@ def create_local_repository()
     Fig::OperatingSystem.new(nil),
     FIG_HOME,
     FIG_CONSUME_URL,
+    FIG_PUBLISH_URL,
     parser,
     [],   # publish listeners
   )

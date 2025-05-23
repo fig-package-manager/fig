@@ -33,7 +33,8 @@ class Fig::Repository
     options,
     operating_system,
     local_repository_directory,
-    remote_repository_url, # kept for backward compatibility but unused
+    remote_consume_url,
+    remote_publish_url,
     parser,
     publish_listeners
   )
@@ -41,6 +42,8 @@ class Fig::Repository
     @options                      = options
     @operating_system             = operating_system
     @local_repository_directory   = local_repository_directory
+    @remote_consume_url           = remote_consume_url
+    @remote_publish_url           = remote_publish_url
     @parser                       = parser
     @publish_listeners            = publish_listeners
 
@@ -173,14 +176,8 @@ class Fig::Repository
 
   private
 
-  # Helper methods to get the appropriate URL based on operation type
-  def remote_consume_url
-    @application_configuration.remote_consume_url
-  end
-  
-  def remote_publish_url
-    @application_configuration.remote_publish_url
-  end
+  attr_reader :remote_consume_url
+  attr_reader :remote_publish_url
 
   def initialize_local_repository()
     FileUtils.mkdir_p(@local_repository_directory)

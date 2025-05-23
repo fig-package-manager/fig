@@ -267,7 +267,8 @@ class Fig::Command
       @options,
       @operating_system,
       @options.home(),
-      nil, # remote_repository_url - no longer used, passing nil for compatibility
+      @application_configuration.remote_consume_url,
+      @application_configuration.remote_publish_url,
       @parser,
       @publish_listeners,
     )
