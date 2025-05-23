@@ -283,7 +283,7 @@ def cleanup_home_and_remote(unified: true)
 
   if unified
     # use symlink to simulate an aggregated artifactory repo 
-    FileUtils.ln_sr(FIG_PUBLISH_DIR, FIG_CONSUME_DIR)
+    FileUtils.ln_s(FIG_PUBLISH_DIR, FIG_CONSUME_DIR)
   else
     FileUtils.mkdir_p(FIG_CONSUME_DIR)
     FileUtils.mkdir_p(File.join(FIG_CONSUME_DIR, Fig::Repository::METADATA_SUBDIRECTORY))

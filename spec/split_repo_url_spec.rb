@@ -29,7 +29,7 @@ describe "Split repository URL behavior" do
       FileUtils.mkdir_p(File.join(publish_dir, Fig::Repository::METADATA_SUBDIRECTORY))
 
       if unified
-        FileUtils.ln_sr(publish_dir, consume_dir)
+        FileUtils.ln_s(publish_dir, consume_dir)
       else
         FileUtils.mkdir_p(consume_dir)
         FileUtils.mkdir_p(File.join(consume_dir, Fig::Repository::METADATA_SUBDIRECTORY))
