@@ -21,10 +21,12 @@ class Fig::Protocol::File
     return packages if ! ::File.exist?(unescaped_path)
 
     ls = ''
+
+    unescaped_path = FileTest.symlink?(unescaped_path) ? ::File.realpath(unescaped_path) : unescaped_path
     Find.find(unescaped_path) {
       |file|
 
-      if FileTest.directory? file
+      if FileTest.directory?(file)
         ls << file.to_s
         ls << "\n"
       end

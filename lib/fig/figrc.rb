@@ -28,17 +28,44 @@ class Fig::FigRC
 
     handle_override_configuration(configuration, override_path)
     handle_figrc(configuration) if not disable_figrc
+    
+    # Check for legacy environment variable usage
+    consume_url = ENV['FIG_CONSUME_URL']
+    publish_url = ENV['FIG_PUBLISH_URL']
+    remote_url = specified_repository_url
+    
+    has_consume = !consume_url.nil? && !consume_url.strip.empty?
+    has_publish = !publish_url.nil? && !publish_url.strip.empty?
+    has_remote = !remote_url.nil? && !remote_url.strip.empty?
+    
+    # Error case: FIG_REMOTE_URL exists but one or both new URLs missing
+    if has_remote && (!has_consume || !has_publish)
+      raise Fig::UserInputError.new(
+        'FIG_REMOTE_URL is set but FIG_CONSUME_URL and/or FIG_PUBLISH_URL are missing. ' +
+        'Please set both FIG_CONSUME_URL and FIG_PUBLISH_URL instead of FIG_REMOTE_URL.'
+      )
+    end
 
-    repository_url =
-      derive_repository_url(specified_repository_url, configuration)
-
-    configuration.base_whitelisted_url = repository_url
-    configuration.remote_repository_url = repository_url
-
-    handle_repository_configuration(
-      configuration, repository_url, operating_system, fig_home
-    ) if not disable_remote_figrc
-
+    # Warning case: All three variables exist
+    if has_remote && has_consume && has_publish
+      $stderr.puts "WARNING: FIG_REMOTE_URL is set but will be ignored. Using FIG_CONSUME_URL and FIG_PUBLISH_URL instead."
+    end
+    
+    # Set the new URL attributes
+    configuration.remote_consume_url = consume_url
+    configuration.remote_publish_url = publish_url
+    
+    # For backward compatibility with code expecting whitelisted URLs
+    url_for_whitelist = has_consume ? consume_url : nil
+    configuration.base_whitelisted_url = url_for_whitelist
+    
+    # Handle repository configuration if enabled
+    if !disable_remote_figrc && has_consume
+      handle_repository_configuration(
+        configuration, consume_url, operating_system, fig_home
+      )
+    end
+    
     return configuration
   end
 

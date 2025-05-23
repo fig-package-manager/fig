@@ -392,49 +392,89 @@ describe 'Fig' do
       end
     end
 
-    describe %q<prints error when attempting a remote operation and FIG_REMOTE_URL is> do
-      it %q<not defined> do
+    describe %q<prints error when attempting a remote operation and required URLs are missing or invalid> do
+      it %q<FIG_CONSUME_URL not defined> do
         begin
+          # Make sure all URL env vars are unset
           ENV.delete('FIG_REMOTE_URL')
+          ENV.delete('FIG_CONSUME_URL')
+          ENV.delete('FIG_PUBLISH_URL')
 
           out, err, exit_code =
             fig %w<--list-remote>, :fork => false, :no_raise_on_error => true
 
-          err.should =~ %r<FIG_REMOTE_URL>
+          # Error should mention the missing FIG_CONSUME_URL
+          err.should =~ %r<FIG_CONSUME_URL>
           out.should == ''
           exit_code.should_not == 0
         ensure
-          ENV['FIG_REMOTE_URL'] = FIG_REMOTE_URL
+          # Restore default test configuration
+          ENV['FIG_CONSUME_URL'] = FIG_CONSUME_URL 
+          ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
         end
       end
 
-      it %q<empty> do
+      it %q<FIG_CONSUME_URL empty> do
         begin
-          ENV['FIG_REMOTE_URL'] = ''
+          # Clear all URLs, but set consume to empty
+          ENV.delete('FIG_REMOTE_URL')
+          ENV['FIG_CONSUME_URL'] = ''
+          ENV.delete('FIG_PUBLISH_URL')
 
           out, err, exit_code =
             fig %w<--list-remote>, :fork => false, :no_raise_on_error => true
 
-          err.should =~ %r<FIG_REMOTE_URL>
+          # With empty URLs, the error is about protocol handling
+          err.should =~ %r<Don't know how to handle the protocol>
           out.should == ''
           exit_code.should_not == 0
         ensure
-          ENV['FIG_REMOTE_URL'] = FIG_REMOTE_URL
+          # Restore default test configuration
+          ENV['FIG_CONSUME_URL'] = FIG_CONSUME_URL 
+          ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
         end
       end
 
-      it %q<all whitespace> do
+      it %q<FIG_CONSUME_URL all whitespace> do
         begin
-          ENV['FIG_REMOTE_URL'] = " \n\t"
+          # Clear all URLs, but set consume to whitespace
+          ENV.delete('FIG_REMOTE_URL')
+          ENV['FIG_CONSUME_URL'] = " \n\t"
+          ENV.delete('FIG_PUBLISH_URL')
 
           out, err, exit_code =
             fig %w<--list-remote>, :fork => false, :no_raise_on_error => true
 
-          err.should =~ %r<FIG_REMOTE_URL>
+          # With whitespace URLs, error is about bad URI format
+          err.should =~ %r<Cannot parse URL>
           out.should == ''
           exit_code.should_not == 0
         ensure
-          ENV['FIG_REMOTE_URL'] = FIG_REMOTE_URL
+          # Restore default test configuration
+          ENV['FIG_CONSUME_URL'] = FIG_CONSUME_URL 
+          ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
+        end
+      end
+      
+      it %q<FIG_REMOTE_URL set but new URLs missing> do
+        begin
+          # Set remote URL but not the new ones
+          ENV['FIG_REMOTE_URL'] = "file:///some/path"
+          ENV.delete('FIG_CONSUME_URL')
+          ENV.delete('FIG_PUBLISH_URL')
+
+          out, err, exit_code =
+            fig %w<--list-remote>, :fork => false, :no_raise_on_error => true
+
+          # Error should mention both old and new URLs
+          err.should =~ %r<FIG_REMOTE_URL is set but FIG_CONSUME_URL and\/or FIG_PUBLISH_URL are missing>
+          out.should == ''
+          exit_code.should_not == 0
+        ensure
+          # Restore default test configuration
+          ENV.delete('FIG_REMOTE_URL')
+          ENV['FIG_CONSUME_URL'] = FIG_CONSUME_URL 
+          ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
         end
       end
     end

@@ -31,8 +31,15 @@ CURRENT_DIRECTORY = FIG_SPEC_BASE_DIRECTORY + '/current-directory'
 
 USER_HOME         = FIG_SPEC_BASE_DIRECTORY + '/user-home'
 FIG_HOME          = FIG_SPEC_BASE_DIRECTORY + '/fig-home'
-FIG_REMOTE_DIR    = FIG_SPEC_BASE_DIRECTORY + '/remote'
-FIG_REMOTE_URL    = %Q<file://#{FIG_REMOTE_DIR}>
+#FIG_REMOTE_DIR    = FIG_SPEC_BASE_DIRECTORY + '/remote'
+# FIG_REMOTE_DIR     ||= File.join(FIG_SPEC_BASE_DIRECTORY, 'repository')
+#FIG_REMOTE_URL    = %Q<file://#{FIG_REMOTE_DIR}>
+
+# For split URL behavior - using distinct directories to catch incorrect URL usage
+FIG_CONSUME_DIR   = File.join(FIG_SPEC_BASE_DIRECTORY, 'remote')
+FIG_PUBLISH_DIR   = File.join(FIG_SPEC_BASE_DIRECTORY, 'publish')
+FIG_CONSUME_URL   = %Q<file://#{FIG_CONSUME_DIR}>
+FIG_PUBLISH_URL   = %Q<file://#{FIG_PUBLISH_DIR}>
 
 FIG_DIRECTORY     ||= File.expand_path(File.dirname(__FILE__)) + '/../bin'
 FIG_COMMAND_CLASS ||= Fig::Command
@@ -56,7 +63,12 @@ BASE_FIG_COMMAND_LINE ||= [
 
 ENV['HOME']           = USER_HOME
 ENV['FIG_HOME']       = FIG_HOME
-ENV['FIG_REMOTE_URL'] = FIG_REMOTE_URL
+# Set up new environment variables for tests
+ENV['FIG_CONSUME_URL'] = FIG_CONSUME_URL
+ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
+
+# For older tests that haven't been updated
+# ENV['FIG_REMOTE_URL'] = FIG_REMOTE_URL # Commented out to avoid errors
 ENV['FIG_COVERAGE_ROOT_DIRECTORY'] =
   File.expand_path(File.dirname(__FILE__) + '/..')
 
@@ -232,16 +244,17 @@ def set_up_test_environment()
   FileUtils.mkdir_p CURRENT_DIRECTORY
   FileUtils.mkdir_p USER_HOME
   FileUtils.mkdir_p FIG_HOME
-  FileUtils.mkdir_p FIG_REMOTE_DIR
+  FileUtils.mkdir_p FIG_PUBLISH_DIR
+  FileUtils.ln_s FIG_PUBLISH_DIR, FIG_CONSUME_DIR
 
   FileUtils.touch FIG_FILE_GUARANTEED_TO_EXIST
 
   metadata_directory =
-    File.join FIG_REMOTE_DIR, Fig::Repository::METADATA_SUBDIRECTORY
+    File.join FIG_PUBLISH_DIR, Fig::Repository::METADATA_SUBDIRECTORY
   FileUtils.mkdir_p metadata_directory
 
   File.open(
-    File.join(FIG_REMOTE_DIR, Fig::FigRC::REPOSITORY_CONFIGURATION), 'w'
+    File.join(FIG_PUBLISH_DIR, Fig::FigRC::REPOSITORY_CONFIGURATION), 'w'
   ) do
     |handle|
     handle.puts '{}' # Empty Javascript/JSON object
@@ -256,10 +269,26 @@ def clean_up_test_environment()
   return
 end
 
-def cleanup_home_and_remote()
+def cleanup_home_and_remote(unified: true)
   FileUtils.rm_rf(FIG_HOME)
-  FileUtils.rm_rf(FIG_REMOTE_DIR)
+  #FileUtils.rm_rf(FIG_REMOTE_DIR)
+  
+  # Clean up split URL directories
+  FileUtils.rm_rf(FIG_CONSUME_DIR)
+  FileUtils.rm_rf(FIG_PUBLISH_DIR)
+  
+  # Create base directories for split URLs
+  FileUtils.mkdir_p(FIG_PUBLISH_DIR)
+  FileUtils.mkdir_p(File.join(FIG_PUBLISH_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
 
+  if unified
+    # use symlink to simulate an aggregated artifactory repo 
+    FileUtils.ln_s(FIG_PUBLISH_DIR, FIG_CONSUME_DIR)
+  else
+    FileUtils.mkdir_p(FIG_CONSUME_DIR)
+    FileUtils.mkdir_p(File.join(FIG_CONSUME_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
+  end
+  
   return
 end
 
@@ -274,8 +303,23 @@ def set_local_repository_format_to_future_version()
 end
 
 def set_remote_repository_format_to_future_version()
-  version_file = File.join(FIG_REMOTE_DIR, Fig::Repository::VERSION_FILE_NAME)
-  FileUtils.mkdir_p(FIG_REMOTE_DIR)
+  # Set future version in legacy remote dir
+  #version_file = File.join(FIG_REMOTE_DIR, Fig::Repository::VERSION_FILE_NAME)
+  #FileUtils.mkdir_p(FIG_REMOTE_DIR)
+  #File.open(version_file, 'w') {
+  #  |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
+  #}
+  
+  # Set future version in consume dir
+  version_file = File.join(FIG_CONSUME_DIR, Fig::Repository::VERSION_FILE_NAME)
+  FileUtils.mkdir_p(FIG_CONSUME_DIR)
+  File.open(version_file, 'w') {
+    |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
+  }
+  
+  # Set future version in publish dir
+  version_file = File.join(FIG_PUBLISH_DIR, Fig::Repository::VERSION_FILE_NAME)
+  FileUtils.mkdir_p(FIG_PUBLISH_DIR)
   File.open(version_file, 'w') {
     |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
   }
