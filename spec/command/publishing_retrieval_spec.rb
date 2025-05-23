@@ -12,6 +12,7 @@ describe 'Fig' do
 
     before(:each) do
       clean_up_test_environment
+      set_up_test_environment
       FileUtils.mkdir_p CURRENT_DIRECTORY
       FileUtils.mkdir_p lib_directory
     end
