@@ -55,6 +55,7 @@ describe 'FigRC' do
   end
 
   before(:all) do
+    clean_up_test_environment
     set_up_test_environment
   end
 
