@@ -15,10 +15,10 @@ module Fig; end
 class Fig::FigRC
   REPOSITORY_CONFIGURATION =
       "#{Fig::Repository::METADATA_SUBDIRECTORY}/figrc"
-
   def self.find(
     override_path,
     specified_repository_url,
+    publish_repository_url,
     operating_system,
     fig_home,
     disable_figrc = false,
@@ -30,9 +30,9 @@ class Fig::FigRC
     handle_figrc(configuration) if not disable_figrc
     
     # Check for legacy environment variable usage
-    consume_url = ENV['FIG_CONSUME_URL']
-    publish_url = ENV['FIG_PUBLISH_URL']
-    remote_url = specified_repository_url
+    consume_url = derive_repository_url(specified_repository_url, 'CONSUME', configuration)
+    publish_url = derive_repository_url(publish_repository_url, 'PUBLISH', configuration)
+    remote_url = ENV['FIG_REMOTE_URL']
     
     has_consume = !consume_url.nil? && !consume_url.strip.empty?
     has_publish = !publish_url.nil? && !publish_url.strip.empty?
@@ -100,9 +100,9 @@ class Fig::FigRC
     return
   end
 
-  def self.derive_repository_url(specified_repository_url, configuration)
+  def self.derive_repository_url(specified_repository_url, which, configuration)
     if specified_repository_url.nil?
-      return configuration['default FIG_REMOTE_URL']
+      return configuration["default FIG_#{which}_URL"]
     end
 
     if specified_repository_url.empty? || specified_repository_url =~ /\A\s*\z/

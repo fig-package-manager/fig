@@ -24,7 +24,7 @@ describe 'FigRC' do
 
   def create_override_file_with_repository_url()
     tempfile = Tempfile.new('some_json_tempfile')
-    tempfile << %Q< { "default FIG_CONSUME_URL" : "#{FIG_CONSUME_URL}" } >
+    tempfile << %Q< { "default FIG_CONSUME_URL" : "#{FIG_CONSUME_URL}", "default FIG_PUBLISH_URL" : "#{FIG_PUBLISH_URL}" } >
     tempfile.close
     return tempfile
   end
@@ -44,10 +44,11 @@ describe 'FigRC' do
     return
   end
 
-  def invoke_find(override_path, repository_url)
+  def invoke_find(override_path, consume_repository_url, publish_repository_url = nil)
     return Fig::FigRC.find(
       override_path,
-      repository_url,
+      consume_repository_url,
+      publish_repository_url,
       Fig::OperatingSystem.new(false),
       FIG_HOME,
       true
@@ -67,7 +68,7 @@ describe 'FigRC' do
     tempfile = create_override_file('loaded as override')
 
     create_remote_config("loaded from repository (shouldn't be)")
-    configuration = invoke_find tempfile.path, FIG_CONSUME_URL
+    configuration = invoke_find tempfile.path, FIG_CONSUME_URL, FIG_PUBLISH_URL
     tempfile.unlink
 
     configuration['foo'].should == 'loaded as override'
@@ -110,7 +111,7 @@ describe 'FigRC' do
   it 'merges override file config over remote config' do
     create_remote_config('loaded from remote repository', 'should not be overwritten')
     tempfile = create_override_file('loaded as override to override remote config')
-    configuration = invoke_find tempfile.path, FIG_CONSUME_URL
+    configuration = invoke_find tempfile.path, FIG_CONSUME_URL, FIG_PUBLISH_URL
     configuration['foo'].should == 'loaded as override to override remote config'
     configuration['bar'].should == 'should not be overwritten'
   end
@@ -119,7 +120,7 @@ describe 'FigRC' do
     tempfile = create_override_file_with_repository_url
     create_remote_config('loaded from repository')
 
-    configuration = invoke_find tempfile.path, nil
+    configuration = invoke_find tempfile.path, nil, nil
     configuration['foo'].should == 'loaded from repository'
   end
 

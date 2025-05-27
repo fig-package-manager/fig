@@ -236,7 +236,8 @@ class Fig::Command
   def set_up_application_configuration()
     @application_configuration = Fig::FigRC.find(
       @options.figrc,
-      ENV['FIG_REMOTE_URL'],
+      ENV['FIG_CONSUME_URL'],
+      ENV['FIG_PUBLISH_URL'],
       @operating_system,
       @options.home,
       @options.no_figrc?,
