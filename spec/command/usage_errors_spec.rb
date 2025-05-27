@@ -424,8 +424,7 @@ describe 'Fig' do
           out, err, exit_code =
             fig %w<--list-remote>, :fork => false, :no_raise_on_error => true
 
-          # With empty URLs, the error is about protocol handling
-          err.should =~ %r<Don't know how to handle the protocol>
+          err.should =~ %r<FIG_CONSUME_URL>
           out.should == ''
           exit_code.should_not == 0
         ensure
@@ -446,7 +445,7 @@ describe 'Fig' do
             fig %w<--list-remote>, :fork => false, :no_raise_on_error => true
 
           # With whitespace URLs, error is about bad URI format
-          err.should =~ %r<Cannot parse URL>
+          err.should =~ %r<FIG_CONSUME_URL>
           out.should == ''
           exit_code.should_not == 0
         ensure

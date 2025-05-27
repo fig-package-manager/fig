@@ -116,7 +116,7 @@ describe "Split repository URL behavior" do
       File.open('default.fig', 'w') { |f| f.puts "config default\nend" }
 
       # Use Fig::FigRC directly to trigger the warning
-      Fig::FigRC.find(nil, ENV['FIG_REMOTE_URL'], 
+      Fig::FigRC.find(nil, ENV['FIG_CONSUME_URL'], ENV['FIG_PUBLISH_URL'],
                     Fig::OperatingSystem.new(false), 
                     FIG_HOME)
 
@@ -166,12 +166,12 @@ describe "Split repository URL behavior" do
 
       out, err, exit_code = fig(%w<--publish simple/1.2.3>, input, :no_raise_on_error => true)
       exit_code.should_not == 0
-      err.should =~ /Please define the FIG_PUBLISH_URL environment variable/
+      err.should =~ /Must set FIG_PUBLISH_URL/
 
       # Consuming without consume URL
       out, err, exit_code = fig(%w<--update>, :no_raise_on_error => true)
       exit_code.should_not == 0
-      err.should =~ /Please define the FIG_CONSUME_URL environment variable/
+      err.should =~ /Must set FIG_CONSUME_URL/
     end
   end
 

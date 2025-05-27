@@ -250,11 +250,11 @@ class Fig::Command
       
       if publishing_operation && @application_configuration.remote_publish_url.nil?
         raise Fig::UserInputError.new(
-          'Please define the FIG_PUBLISH_URL environment variable for publishing operations.'
+          'Must set FIG_PUBLISH_URL for publishing operations.'
         )
       elsif !publishing_operation && @application_configuration.remote_consume_url.nil?
         raise Fig::UserInputError.new(
-          'Please define the FIG_CONSUME_URL environment variable for repository operations.'
+          'Must set FIG_CONSUME_URL for repository operations.'
         )
       end
     end

@@ -115,8 +115,10 @@ required or allowed is dependent upon what your are doing.
 
 Environment variables:
 
-  FIG_REMOTE_URL     location of remote repository, required for remote
+  FIG_CONSUME_URL    location of remote repository for download, required for remote
                      operations
+  FIG_PUBLISH_URL    location of remote repository for upload, required for remote
+                     publish operations
   FIG_HOME           path to local repository, defaults to $HOME/.fighome
   FIG_SVN_EXECUTABLE path to svn executable, set to empty string to suppress
                      use of Subversion
