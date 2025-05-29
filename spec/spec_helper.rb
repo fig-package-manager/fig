@@ -266,7 +266,6 @@ end
 
 def cleanup_home_and_remote(unified: true)
   FileUtils.rm_rf(FIG_HOME)
-  #FileUtils.rm_rf(FIG_REMOTE_DIR)
   
   # Clean up split URL directories
   FileUtils.rm_rf(FIG_CONSUME_DIR)
@@ -298,13 +297,6 @@ def set_local_repository_format_to_future_version()
 end
 
 def set_remote_repository_format_to_future_version()
-  # Set future version in legacy remote dir
-  #version_file = File.join(FIG_REMOTE_DIR, Fig::Repository::VERSION_FILE_NAME)
-  #FileUtils.mkdir_p(FIG_REMOTE_DIR)
-  #File.open(version_file, 'w') {
-  #  |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
-  #}
-  
   # Set future version in consume dir
   version_file = File.join(FIG_CONSUME_DIR, Fig::Repository::VERSION_FILE_NAME)
   FileUtils.mkdir_p(FIG_CONSUME_DIR)
