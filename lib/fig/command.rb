@@ -236,7 +236,7 @@ class Fig::Command
   def set_up_application_configuration()
     @application_configuration = Fig::FigRC.find(
       @options.figrc,
-      ENV['FIG_CONSUME_URL'],
+      ENV['FIG_DOWNLOAD_URL'],
       ENV['FIG_PUBLISH_URL'],
       @operating_system,
       @options.home,
@@ -252,9 +252,9 @@ class Fig::Command
         raise Fig::UserInputError.new(
           'Must set FIG_PUBLISH_URL for publishing operations.'
         )
-      elsif !publishing_operation && @application_configuration.remote_consume_url.nil?
+      elsif !publishing_operation && @application_configuration.remote_download_url.nil?
         raise Fig::UserInputError.new(
-          'Must set FIG_CONSUME_URL for repository operations.'
+          'Must set FIG_DOWNLOAD_URL for repository operations.'
         )
       end
     end
@@ -268,7 +268,7 @@ class Fig::Command
       @options,
       @operating_system,
       @options.home(),
-      @application_configuration.remote_consume_url,
+      @application_configuration.remote_download_url,
       @application_configuration.remote_publish_url,
       @parser,
       @publish_listeners,

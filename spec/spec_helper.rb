@@ -33,9 +33,9 @@ USER_HOME         = FIG_SPEC_BASE_DIRECTORY + '/user-home'
 FIG_HOME          = FIG_SPEC_BASE_DIRECTORY + '/fig-home'
 
 # For split URL behavior - using distinct directories to catch incorrect URL usage
-FIG_CONSUME_DIR   = File.join(FIG_SPEC_BASE_DIRECTORY, 'remote')
+FIG_DOWNLOAD_DIR   = File.join(FIG_SPEC_BASE_DIRECTORY, 'remote')
 FIG_PUBLISH_DIR   = File.join(FIG_SPEC_BASE_DIRECTORY, 'publish')
-FIG_CONSUME_URL   = %Q<file://#{FIG_CONSUME_DIR}>
+FIG_DOWNLOAD_URL   = %Q<file://#{FIG_DOWNLOAD_DIR}>
 FIG_PUBLISH_URL   = %Q<file://#{FIG_PUBLISH_DIR}>
 
 FIG_DIRECTORY     ||= File.expand_path(File.dirname(__FILE__)) + '/../bin'
@@ -61,7 +61,7 @@ BASE_FIG_COMMAND_LINE ||= [
 ENV['HOME']           = USER_HOME
 ENV['FIG_HOME']       = FIG_HOME
 # Set up new environment variables for tests
-ENV['FIG_CONSUME_URL'] = FIG_CONSUME_URL
+ENV['FIG_DOWNLOAD_URL'] = FIG_DOWNLOAD_URL
 ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
 
 ENV['FIG_COVERAGE_ROOT_DIRECTORY'] =
@@ -240,7 +240,7 @@ def set_up_test_environment()
   FileUtils.mkdir_p USER_HOME
   FileUtils.mkdir_p FIG_HOME
   FileUtils.mkdir_p FIG_PUBLISH_DIR
-  FileUtils.ln_s FIG_PUBLISH_DIR, FIG_CONSUME_DIR
+  FileUtils.ln_s FIG_PUBLISH_DIR, FIG_DOWNLOAD_DIR
 
   FileUtils.touch FIG_FILE_GUARANTEED_TO_EXIST
 
@@ -268,7 +268,7 @@ def cleanup_home_and_remote(unified: true)
   FileUtils.rm_rf(FIG_HOME)
   
   # Clean up split URL directories
-  FileUtils.rm_rf(FIG_CONSUME_DIR)
+  FileUtils.rm_rf(FIG_DOWNLOAD_DIR)
   FileUtils.rm_rf(FIG_PUBLISH_DIR)
   
   # Create base directories for split URLs
@@ -277,10 +277,10 @@ def cleanup_home_and_remote(unified: true)
 
   if unified
     # use symlink to simulate an aggregated artifactory repo 
-    FileUtils.ln_s(FIG_PUBLISH_DIR, FIG_CONSUME_DIR)
+    FileUtils.ln_s(FIG_PUBLISH_DIR, FIG_DOWNLOAD_DIR)
   else
-    FileUtils.mkdir_p(FIG_CONSUME_DIR)
-    FileUtils.mkdir_p(File.join(FIG_CONSUME_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
+    FileUtils.mkdir_p(FIG_DOWNLOAD_DIR)
+    FileUtils.mkdir_p(File.join(FIG_DOWNLOAD_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
   end
   
   return
@@ -297,9 +297,9 @@ def set_local_repository_format_to_future_version()
 end
 
 def set_remote_repository_format_to_future_version()
-  # Set future version in consume dir
-  version_file = File.join(FIG_CONSUME_DIR, Fig::Repository::VERSION_FILE_NAME)
-  FileUtils.mkdir_p(FIG_CONSUME_DIR)
+  # Set future version in download dir
+  version_file = File.join(FIG_DOWNLOAD_DIR, Fig::Repository::VERSION_FILE_NAME)
+  FileUtils.mkdir_p(FIG_DOWNLOAD_DIR)
   File.open(version_file, 'w') {
     |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
   }

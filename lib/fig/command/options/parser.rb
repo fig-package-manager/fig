@@ -115,7 +115,7 @@ required or allowed is dependent upon what your are doing.
 
 Environment variables:
 
-  FIG_CONSUME_URL    location of remote repository for download, required for remote
+  FIG_DOWNLOAD_URL   location of remote repository for download, required for remote
                      operations
   FIG_PUBLISH_URL    location of remote repository for upload, required for remote
                      publish operations

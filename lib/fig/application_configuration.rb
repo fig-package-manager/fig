@@ -5,7 +5,7 @@ module Fig; end
 # Configuration for the Fig program, as opposed to a config in a package.
 class Fig::ApplicationConfiguration
   attr_accessor :base_whitelisted_url
-  attr_accessor :remote_consume_url
+  attr_accessor :remote_download_url
   attr_accessor :remote_publish_url
 
   def initialize()
