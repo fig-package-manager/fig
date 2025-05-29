@@ -17,7 +17,7 @@ class Fig::FigRC
       "#{Fig::Repository::METADATA_SUBDIRECTORY}/figrc"
   def self.find(
     override_path,
-    specified_repository_url,
+    consume_repository_url,
     publish_repository_url,
     operating_system,
     fig_home,
@@ -30,7 +30,7 @@ class Fig::FigRC
     handle_figrc(configuration) if not disable_figrc
     
     # Check for legacy environment variable usage
-    consume_url = derive_repository_url(specified_repository_url, 'CONSUME', configuration)
+    consume_url = derive_repository_url(consume_repository_url, 'CONSUME', configuration)
     publish_url = derive_repository_url(publish_repository_url, 'PUBLISH', configuration)
     remote_url = ENV['FIG_REMOTE_URL']
     
