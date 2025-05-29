@@ -158,9 +158,9 @@ class Fig::Repository
 
     if not local_only
       publisher.remote_directory_for_package =
-        remote_directory_for_package(descriptor, true) # true = use publish URL
+        remote_directory_for_package(descriptor, for_publishing: true)
       publisher.remote_fig_file_for_package =
-        remote_fig_file_for_package(descriptor, true) # true = use publish URL
+        remote_fig_file_for_package(descriptor, for_publishing: true)
     end
 
     return publisher.publish_package()
@@ -455,9 +455,9 @@ class Fig::Repository
     return
   end
 
-  def remote_fig_file_for_package(descriptor, for_publishing = false)
+  def remote_fig_file_for_package(descriptor, for_publishing: false)
     return Fig::URL.append_path_components(
-      remote_directory_for_package(descriptor, for_publishing), [PACKAGE_FILE_IN_REPO]
+      remote_directory_for_package(descriptor, for_publishing: for_publishing), [PACKAGE_FILE_IN_REPO]
     )
   end
 
@@ -469,7 +469,7 @@ class Fig::Repository
     File.join(package_download_dir, PACKAGE_FILE_IN_REPO)
   end
 
-  def remote_directory_for_package(descriptor, for_publishing = false)
+  def remote_directory_for_package(descriptor, for_publishing: false)
     url = for_publishing ? remote_publish_url() : remote_consume_url()
     return Fig::URL.append_path_components(
       url, [descriptor.name, descriptor.version]
