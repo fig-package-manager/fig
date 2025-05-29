@@ -237,8 +237,9 @@ jobs:
           chmod 0600 $HOME/.gem/credentials
           gem push pkg/*.gem
           rm -f $HOME/.gem/credentials
-
-  compute-tag:
+          
+  # figure out which docker image tag to use for various CI images
+  compute-img-tag:
     runs-on: ubuntu-latest
     outputs:
       BRANCH_NAME: ${{ steps.branch_env.outputs.branch_name }}
@@ -250,20 +251,21 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "is_master=${{ github.ref == 'refs/heads/master' }}" >> $GITHUB_OUTPUT
 
+  # this is just a handy job to document the computed tag in the workflow
   whats-my-tag:
-    needs: compute-tag
+    needs: compute-img-tag
     runs-on: ubuntu-latest
     steps:
       - name: 
         run: |
-          echo "branch name=${{ needs.compute-tag.outputs.BRANCH_NAME }}"
-          echo "image=${{ format('ghcr.io/{0}/fig-ci:centos7.9.2009-{1}', github.repository, needs.compute-tag.outputs.BRANCH_NAME) }}"
+          echo "branch name=${{ needs.compute-img-tag.outputs.BRANCH_NAME }}"
+          echo "image=${{ format('ghcr.io/{0}/fig-ci:<baseOS>-{1}', github.repository, needs.compute-img-tag.outputs.BRANCH_NAME) }}"
           
 # Need to figure out how to parameterize the common parts of
 # these jobs and factor out only the differing parts.
   test-gem-install-nongha:
     # Enable the job
-    needs: [ package, compute-tag, find-image-dirs, build-nongha-images ]
+    needs: [ package, compute-img-tag, find-image-dirs, build-nongha-images ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false  # Don't fail the entire matrix if one job fails
@@ -290,7 +292,7 @@ jobs:
 
     container:
       # Use stable tag on master, branch-based tag on feature branches
-      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:{1}', github.repository, matrix.image) || format('ghcr.io/{0}/fig-ci:{1}-{2}', github.repository, matrix.image, needs.compute-tag.outputs.BRANCH_NAME) }}
+      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:{1}', github.repository, matrix.image) || format('ghcr.io/{0}/fig-ci:{1}-{2}', github.repository, matrix.image, needs.compute-img-tagy.outputs.BRANCH_NAME) }}
       options: --user root
 
     defaults:
