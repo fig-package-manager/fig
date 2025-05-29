@@ -16,7 +16,8 @@ on:
   # Only trigger specific PR events to avoid redundant runs
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [ "*" ]
+    branches:
+      - master
     paths-ignore:
       - 'doc/**'
   # Allow manual trigger for debugging and one-off runs
