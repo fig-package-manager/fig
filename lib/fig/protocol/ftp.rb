@@ -90,17 +90,17 @@ class Fig::Protocol::FTP
   end
 
   def upload(local_file, uri)
-    ftp_uri = Fig::URL.parse(ENV['FIG_PUBLISH_URL'])
+    ftp_uri = Fig::URL.parse(ENV['FIG_UPLOAD_URL'])
     ftp_root_path = ftp_uri.path
     ftp_root_dirs = ftp_uri.path.split('/')
-    remote_publish_path = uri.path[0, uri.path.rindex('/')]
-    remote_publish_dirs = remote_publish_path.split('/')
+    remote_upload_path = uri.path[0, uri.path.rindex('/')]
+    remote_upload_dirs = remote_upload_path.split('/')
     # Use array subtraction to deduce which project/version folder to upload
     # to, i.e. [1,2,3] - [2,3,4] = [1]
-    remote_project_dirs = remote_publish_dirs - ftp_root_dirs
+    remote_project_dirs = remote_upload_dirs - ftp_root_dirs
     Net::FTP.open(uri.host) do |ftp|
       ftp_login(ftp, uri.host, :prompt_for_login)
-      # Assume that the FIG_PUBLISH_URL path exists.
+      # Assume that the FIG_UPLOAD_URL path exists.
       ftp.chdir(ftp_root_path)
       remote_project_dirs.each do |dir|
         # Can't automatically create parent directories, so do it manually.

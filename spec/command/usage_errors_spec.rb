@@ -398,7 +398,7 @@ describe 'Fig' do
           # Make sure all URL env vars are unset
           ENV.delete('FIG_REMOTE_URL')
           ENV.delete('FIG_DOWNLOAD_URL')
-          ENV.delete('FIG_PUBLISH_URL')
+          ENV.delete('FIG_UPLOAD_URL')
 
           out, err, exit_code =
             fig %w<--list-remote>, :fork => false, :no_raise_on_error => true
@@ -410,7 +410,7 @@ describe 'Fig' do
         ensure
           # Restore default test configuration
           ENV['FIG_DOWNLOAD_URL'] = FIG_DOWNLOAD_URL 
-          ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
+          ENV['FIG_UPLOAD_URL'] = FIG_UPLOAD_URL
         end
       end
 
@@ -419,7 +419,7 @@ describe 'Fig' do
           # Clear all URLs, but set download to empty
           ENV.delete('FIG_REMOTE_URL')
           ENV['FIG_DOWNLOAD_URL'] = ''
-          ENV.delete('FIG_PUBLISH_URL')
+          ENV.delete('FIG_UPLOAD_URL')
 
           out, err, exit_code =
             fig %w<--list-remote>, :fork => false, :no_raise_on_error => true
@@ -430,7 +430,7 @@ describe 'Fig' do
         ensure
           # Restore default test configuration
           ENV['FIG_DOWNLOAD_URL'] = FIG_DOWNLOAD_URL 
-          ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
+          ENV['FIG_UPLOAD_URL'] = FIG_UPLOAD_URL
         end
       end
 
@@ -439,7 +439,7 @@ describe 'Fig' do
           # Clear all URLs, but set download to whitespace
           ENV.delete('FIG_REMOTE_URL')
           ENV['FIG_DOWNLOAD_URL'] = " \n\t"
-          ENV.delete('FIG_PUBLISH_URL')
+          ENV.delete('FIG_UPLOAD_URL')
 
           out, err, exit_code =
             fig %w<--list-remote>, :fork => false, :no_raise_on_error => true
@@ -451,7 +451,7 @@ describe 'Fig' do
         ensure
           # Restore default test configuration
           ENV['FIG_DOWNLOAD_URL'] = FIG_DOWNLOAD_URL 
-          ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
+          ENV['FIG_UPLOAD_URL'] = FIG_UPLOAD_URL
         end
       end
       
@@ -460,20 +460,20 @@ describe 'Fig' do
           # Set remote URL but not the new ones
           ENV['FIG_REMOTE_URL'] = "file:///some/path"
           ENV.delete('FIG_DOWNLOAD_URL')
-          ENV.delete('FIG_PUBLISH_URL')
+          ENV.delete('FIG_UPLOAD_URL')
 
           out, err, exit_code =
             fig %w<--list-remote>, :fork => false, :no_raise_on_error => true
 
           # Error should mention both old and new URLs
-          err.should =~ %r<FIG_REMOTE_URL is set but FIG_DOWNLOAD_URL and\/or FIG_PUBLISH_URL are missing>
+          err.should =~ %r<FIG_REMOTE_URL is set but FIG_DOWNLOAD_URL and\/or FIG_UPLOAD_URL are missing>
           out.should == ''
           exit_code.should_not == 0
         ensure
           # Restore default test configuration
           ENV.delete('FIG_REMOTE_URL')
           ENV['FIG_DOWNLOAD_URL'] = FIG_DOWNLOAD_URL 
-          ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
+          ENV['FIG_UPLOAD_URL'] = FIG_UPLOAD_URL
         end
       end
     end

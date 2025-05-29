@@ -13,7 +13,7 @@ describe 'Parser' do
 
     application_configuration.base_whitelisted_url = 'http://example/'
     application_configuration.remote_download_url = 'http://example/'
-    application_configuration.remote_publish_url = 'http://example/publish/'
+    application_configuration.remote_upload_url = 'http://example/upload/'
 
     return application_configuration
   end

@@ -18,7 +18,7 @@ class Fig::FigRC
   def self.find(
     override_path,
     download_repository_url,
-    publish_repository_url,
+    upload_repository_url,
     operating_system,
     fig_home,
     disable_figrc = false,
@@ -31,29 +31,29 @@ class Fig::FigRC
     
     # Check for legacy environment variable usage
     download_url = derive_repository_url(download_repository_url, 'DOWNLOAD', configuration)
-    publish_url = derive_repository_url(publish_repository_url, 'PUBLISH', configuration)
+    upload_url = derive_repository_url(upload_repository_url, 'UPLOAD', configuration)
     remote_url = ENV['FIG_REMOTE_URL']
     
     has_download = !download_url.nil? && !download_url.strip.empty?
-    has_publish = !publish_url.nil? && !publish_url.strip.empty?
+    has_upload = !upload_url.nil? && !upload_url.strip.empty?
     has_remote = !remote_url.nil? && !remote_url.strip.empty?
     
     # Error case: FIG_REMOTE_URL exists but one or both new URLs missing
-    if has_remote && (!has_download || !has_publish)
+    if has_remote && (!has_download || !has_upload)
       raise Fig::UserInputError.new(
-        'FIG_REMOTE_URL is set but FIG_DOWNLOAD_URL and/or FIG_PUBLISH_URL are missing. ' +
-        'Please set both FIG_DOWNLOAD_URL and FIG_PUBLISH_URL instead of FIG_REMOTE_URL.'
+        'FIG_REMOTE_URL is set but FIG_DOWNLOAD_URL and/or FIG_UPLOAD_URL are missing. ' +
+        'Please set both FIG_DOWNLOAD_URL and FIG_UPLOAD_URL instead of FIG_REMOTE_URL.'
       )
     end
 
     # Warning case: All three variables exist
-    if has_remote && has_download && has_publish
-      $stderr.puts "WARNING: FIG_REMOTE_URL is set but will be ignored. Using FIG_DOWNLOAD_URL and FIG_PUBLISH_URL instead."
+    if has_remote && has_download && has_upload
+      $stderr.puts "WARNING: FIG_REMOTE_URL is set but will be ignored. Using FIG_DOWNLOAD_URL and FIG_UPLOAD_URL instead."
     end
     
     # Set the new URL attributes
     configuration.remote_download_url = download_url
-    configuration.remote_publish_url = publish_url
+    configuration.remote_upload_url = upload_url
     
     # For backward compatibility with code expecting whitelisted URLs
     url_for_whitelist = has_download ? download_url : nil

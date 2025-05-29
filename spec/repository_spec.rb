@@ -16,7 +16,7 @@ def create_local_repository()
   application_config = Fig::ApplicationConfiguration.new()
   application_config.base_whitelisted_url = FIG_DOWNLOAD_URL
   application_config.remote_download_url = FIG_DOWNLOAD_URL
-  application_config.remote_publish_url = FIG_PUBLISH_URL
+  application_config.remote_upload_url = FIG_UPLOAD_URL
 
   parser = Fig::Parser.new(application_config, false)
 
@@ -26,7 +26,7 @@ def create_local_repository()
     Fig::OperatingSystem.new(nil),
     FIG_HOME,
     FIG_DOWNLOAD_URL,
-    FIG_PUBLISH_URL,
+    FIG_UPLOAD_URL,
     parser,
     [],   # publish listeners
   )

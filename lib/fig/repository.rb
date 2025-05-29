@@ -34,7 +34,7 @@ class Fig::Repository
     operating_system,
     local_repository_directory,
     remote_download_url,
-    remote_publish_url,
+    remote_upload_url,
     parser,
     publish_listeners
   )
@@ -42,8 +42,8 @@ class Fig::Repository
     @options                      = options
     @operating_system             = operating_system
     @local_repository_directory   = local_repository_directory
-    @remote_download_url           = remote_download_url
-    @remote_publish_url           = remote_publish_url
+    @remote_download_url          = remote_download_url
+    @remote_upload_url            = remote_upload_url
     @parser                       = parser
     @publish_listeners            = publish_listeners
 
@@ -177,7 +177,7 @@ class Fig::Repository
   private
 
   attr_reader :remote_download_url
-  attr_reader :remote_publish_url
+  attr_reader :remote_upload_url
 
   def initialize_local_repository()
     FileUtils.mkdir_p(@local_repository_directory)
@@ -470,7 +470,7 @@ class Fig::Repository
   end
 
   def remote_directory_for_package(descriptor, for_publishing: false)
-    url = for_publishing ? remote_publish_url() : remote_download_url()
+    url = for_publishing ? remote_upload_url() : remote_download_url()
     return Fig::URL.append_path_components(
       url, [descriptor.name, descriptor.version]
     )

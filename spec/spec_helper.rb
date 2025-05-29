@@ -34,9 +34,9 @@ FIG_HOME          = FIG_SPEC_BASE_DIRECTORY + '/fig-home'
 
 # For split URL behavior - using distinct directories to catch incorrect URL usage
 FIG_DOWNLOAD_DIR   = File.join(FIG_SPEC_BASE_DIRECTORY, 'remote')
-FIG_PUBLISH_DIR   = File.join(FIG_SPEC_BASE_DIRECTORY, 'publish')
+FIG_UPLOAD_DIR   = File.join(FIG_SPEC_BASE_DIRECTORY, 'upload')
 FIG_DOWNLOAD_URL   = %Q<file://#{FIG_DOWNLOAD_DIR}>
-FIG_PUBLISH_URL   = %Q<file://#{FIG_PUBLISH_DIR}>
+FIG_UPLOAD_URL   = %Q<file://#{FIG_UPLOAD_DIR}>
 
 FIG_DIRECTORY     ||= File.expand_path(File.dirname(__FILE__)) + '/../bin'
 FIG_COMMAND_CLASS ||= Fig::Command
@@ -62,7 +62,7 @@ ENV['HOME']           = USER_HOME
 ENV['FIG_HOME']       = FIG_HOME
 # Set up new environment variables for tests
 ENV['FIG_DOWNLOAD_URL'] = FIG_DOWNLOAD_URL
-ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
+ENV['FIG_UPLOAD_URL'] = FIG_UPLOAD_URL
 
 ENV['FIG_COVERAGE_ROOT_DIRECTORY'] =
   File.expand_path(File.dirname(__FILE__) + '/..')
@@ -239,17 +239,17 @@ def set_up_test_environment()
   FileUtils.mkdir_p CURRENT_DIRECTORY
   FileUtils.mkdir_p USER_HOME
   FileUtils.mkdir_p FIG_HOME
-  FileUtils.mkdir_p FIG_PUBLISH_DIR
-  FileUtils.ln_s FIG_PUBLISH_DIR, FIG_DOWNLOAD_DIR
+  FileUtils.mkdir_p FIG_UPLOAD_DIR
+  FileUtils.ln_s FIG_UPLOAD_DIR, FIG_DOWNLOAD_DIR
 
   FileUtils.touch FIG_FILE_GUARANTEED_TO_EXIST
 
   metadata_directory =
-    File.join FIG_PUBLISH_DIR, Fig::Repository::METADATA_SUBDIRECTORY
+    File.join FIG_UPLOAD_DIR, Fig::Repository::METADATA_SUBDIRECTORY
   FileUtils.mkdir_p metadata_directory
 
   File.open(
-    File.join(FIG_PUBLISH_DIR, Fig::FigRC::REPOSITORY_CONFIGURATION), 'w'
+    File.join(FIG_UPLOAD_DIR, Fig::FigRC::REPOSITORY_CONFIGURATION), 'w'
   ) do
     |handle|
     handle.puts '{}' # Empty Javascript/JSON object
@@ -269,15 +269,15 @@ def cleanup_home_and_remote(unified: true)
   
   # Clean up split URL directories
   FileUtils.rm_rf(FIG_DOWNLOAD_DIR)
-  FileUtils.rm_rf(FIG_PUBLISH_DIR)
+  FileUtils.rm_rf(FIG_UPLOAD_DIR)
   
   # Create base directories for split URLs
-  FileUtils.mkdir_p(FIG_PUBLISH_DIR)
-  FileUtils.mkdir_p(File.join(FIG_PUBLISH_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
+  FileUtils.mkdir_p(FIG_UPLOAD_DIR)
+  FileUtils.mkdir_p(File.join(FIG_UPLOAD_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
 
   if unified
     # use symlink to simulate an aggregated artifactory repo 
-    FileUtils.ln_s(FIG_PUBLISH_DIR, FIG_DOWNLOAD_DIR)
+    FileUtils.ln_s(FIG_UPLOAD_DIR, FIG_DOWNLOAD_DIR)
   else
     FileUtils.mkdir_p(FIG_DOWNLOAD_DIR)
     FileUtils.mkdir_p(File.join(FIG_DOWNLOAD_DIR, Fig::Repository::METADATA_SUBDIRECTORY))
@@ -304,9 +304,9 @@ def set_remote_repository_format_to_future_version()
     |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
   }
   
-  # Set future version in publish dir
-  version_file = File.join(FIG_PUBLISH_DIR, Fig::Repository::VERSION_FILE_NAME)
-  FileUtils.mkdir_p(FIG_PUBLISH_DIR)
+  # Set future version in upload dir
+  version_file = File.join(FIG_UPLOAD_DIR, Fig::Repository::VERSION_FILE_NAME)
+  FileUtils.mkdir_p(FIG_UPLOAD_DIR)
   File.open(version_file, 'w') {
     |handle| handle.write(Fig::Repository::REMOTE_VERSION_SUPPORTED + 1)
   }

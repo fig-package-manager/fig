@@ -24,7 +24,7 @@ describe 'FigRC' do
 
   def create_override_file_with_repository_url()
     tempfile = Tempfile.new('some_json_tempfile')
-    tempfile << %Q< { "default FIG_DOWNLOAD_URL" : "#{FIG_DOWNLOAD_URL}", "default FIG_PUBLISH_URL" : "#{FIG_PUBLISH_URL}" } >
+    tempfile << %Q< { "default FIG_DOWNLOAD_URL" : "#{FIG_DOWNLOAD_URL}", "default FIG_UPLOAD_URL" : "#{FIG_UPLOAD_URL}" } >
     tempfile.close
     return tempfile
   end
@@ -44,11 +44,11 @@ describe 'FigRC' do
     return
   end
 
-  def invoke_find(override_path, download_repository_url, publish_repository_url = nil)
+  def invoke_find(override_path, download_repository_url, upload_repository_url = nil)
     return Fig::FigRC.find(
       override_path,
       download_repository_url,
-      publish_repository_url,
+      upload_repository_url,
       Fig::OperatingSystem.new(false),
       FIG_HOME,
       true
@@ -68,7 +68,7 @@ describe 'FigRC' do
     tempfile = create_override_file('loaded as override')
 
     create_remote_config("loaded from repository (shouldn't be)")
-    configuration = invoke_find tempfile.path, FIG_DOWNLOAD_URL, FIG_PUBLISH_URL
+    configuration = invoke_find tempfile.path, FIG_DOWNLOAD_URL, FIG_UPLOAD_URL
     tempfile.unlink
 
     configuration['foo'].should == 'loaded as override'
@@ -111,7 +111,7 @@ describe 'FigRC' do
   it 'merges override file config over remote config' do
     create_remote_config('loaded from remote repository', 'should not be overwritten')
     tempfile = create_override_file('loaded as override to override remote config')
-    configuration = invoke_find tempfile.path, FIG_DOWNLOAD_URL, FIG_PUBLISH_URL
+    configuration = invoke_find tempfile.path, FIG_DOWNLOAD_URL, FIG_UPLOAD_URL
     configuration['foo'].should == 'loaded as override to override remote config'
     configuration['bar'].should == 'should not be overwritten'
   end

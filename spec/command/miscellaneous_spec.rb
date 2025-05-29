@@ -131,7 +131,7 @@ describe 'Fig' do
     out.should =~ / --help-long \b        /x
     out.should =~ / --options \b          /x
     out.should =~ / \b FIG_DOWNLOAD_URL \b  /x
-    out.should =~ / \b FIG_PUBLISH_URL \b  /x
+    out.should =~ / \b FIG_UPLOAD_URL \b  /x
     out.should =~ / \b FIG_HOME \b        /x
   end
 

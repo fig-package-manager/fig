@@ -16,37 +16,37 @@ describe "Split repository URL behavior" do
     end
 
     def create_test_repos(unified: false)
-      # Name separate download and publish directories
+      # Name separate download and upload directories
       download_dir = File.join(FIG_SPEC_BASE_DIRECTORY, 'download-repo')
-      publish_dir = File.join(FIG_SPEC_BASE_DIRECTORY, 'publish-repo')
+      upload_dir = File.join(FIG_SPEC_BASE_DIRECTORY, 'upload-repo')
 
       # Clean up any existing directories
       FileUtils.rm_rf(download_dir)
-      FileUtils.rm_rf(publish_dir)
+      FileUtils.rm_rf(upload_dir)
 
       # Create the "repositories" based on whether we want unified or not
-      FileUtils.mkdir_p(publish_dir)
-      FileUtils.mkdir_p(File.join(publish_dir, Fig::Repository::METADATA_SUBDIRECTORY))
+      FileUtils.mkdir_p(upload_dir)
+      FileUtils.mkdir_p(File.join(upload_dir, Fig::Repository::METADATA_SUBDIRECTORY))
 
       if unified
-        FileUtils.ln_s(publish_dir, download_dir)
+        FileUtils.ln_s(upload_dir, download_dir)
       else
         FileUtils.mkdir_p(download_dir)
         FileUtils.mkdir_p(File.join(download_dir, Fig::Repository::METADATA_SUBDIRECTORY))
       end
 
-      return download_dir, publish_dir
+      return download_dir, upload_dir
     end
 
-    it "(distinct repos) publishes to publish URL and downloads from download URL" do
+    it "(distinct repos) publishes to upload URL and downloads from download URL" do
       # Create separate repos
-      download_dir, publish_dir = create_test_repos
+      download_dir, upload_dir = create_test_repos
       download_url = "file://#{download_dir}"
-      publish_url = "file://#{publish_dir}"
+      upload_url = "file://#{upload_dir}"
 
       # Set up environment for this test
       ENV['FIG_DOWNLOAD_URL'] = download_url
-      ENV['FIG_PUBLISH_URL'] = publish_url
+      ENV['FIG_UPLOAD_URL'] = upload_url
 
       # Create a simple package
       input = <<-END
@@ -60,27 +60,27 @@ describe "Split repository URL behavior" do
         fig(%w<--publish simple/1.2.3>, input, :no_raise_on_error => true)
       exit_code.should == 0
 
-      # Check that package exists in publish repo but not in download repo
-      publish_path = File.join(publish_dir, 'simple', '1.2.3', Fig::Repository::PACKAGE_FILE_IN_REPO)
+      # Check that package exists in upload repo but not in download repo
+      upload_path = File.join(upload_dir, 'simple', '1.2.3', Fig::Repository::PACKAGE_FILE_IN_REPO)
       download_path = File.join(download_dir, 'simple', '1.2.3', Fig::Repository::PACKAGE_FILE_IN_REPO)
 
-      File.exist?(publish_path).should be true
+      File.exist?(upload_path).should be true
       File.exist?(download_path).should be false
     end
 
-    it "(unified repos) publishes to publish URL and downloads from download URL" do
+    it "(unified repos) publishes to upload URL and downloads from download URL" do
       # Create separate repos
-      download_dir, publish_dir = create_test_repos(unified: true)
+      download_dir, upload_dir = create_test_repos(unified: true)
       download_url = "file://#{download_dir}"
-      publish_url = "file://#{publish_dir}"
+      upload_url = "file://#{upload_dir}"
 
       # Set up environment for this test
       ENV['FIG_DOWNLOAD_URL'] = download_url
-      ENV['FIG_PUBLISH_URL'] = publish_url
+      ENV['FIG_UPLOAD_URL'] = upload_url
 
-      download_url.should_not == publish_url
+      download_url.should_not == upload_url
       FileTest.symlink?(download_dir).should be true
-      FileTest.identical?(publish_dir, download_dir)
+      FileTest.identical?(upload_dir, download_dir)
 
       # Create a simple package
       input = <<-END
@@ -94,18 +94,18 @@ describe "Split repository URL behavior" do
         fig(%w<--publish simple/1.2.3>, input, :no_raise_on_error => true)
       exit_code.should == 0
 
-      # Check that package exists in publish repo AND in download repo
-      publish_path = File.join(publish_dir, 'simple', '1.2.3', Fig::Repository::PACKAGE_FILE_IN_REPO)
+      # Check that package exists in upload repo AND in download repo
+      upload_path = File.join(upload_dir, 'simple', '1.2.3', Fig::Repository::PACKAGE_FILE_IN_REPO)
       download_path = File.join(download_dir, 'simple', '1.2.3', Fig::Repository::PACKAGE_FILE_IN_REPO)
 
-      File.exist?(publish_path).should be true
+      File.exist?(upload_path).should be true
       File.exist?(download_path).should be true
     end
     it "warns when FIG_REMOTE_URL is set alongside the new URLs" do
       # Set up conflicting environment
       ENV['FIG_REMOTE_URL'] = "file:///some/path"
       ENV['FIG_DOWNLOAD_URL'] = "file:///download/path"
-      ENV['FIG_PUBLISH_URL'] = "file:///publish/path"
+      ENV['FIG_UPLOAD_URL'] = "file:///upload/path"
 
       # We need to mock the $stderr output since that's where the warning goes
       # Capture original stderr and redirect to a StringIO
@@ -116,7 +116,7 @@ describe "Split repository URL behavior" do
       File.open('default.fig', 'w') { |f| f.puts "config default\nend" }
 
       # Use Fig::FigRC directly to trigger the warning
-      Fig::FigRC.find(nil, ENV['FIG_DOWNLOAD_URL'], ENV['FIG_PUBLISH_URL'],
+      Fig::FigRC.find(nil, ENV['FIG_DOWNLOAD_URL'], ENV['FIG_UPLOAD_URL'],
                     Fig::OperatingSystem.new(false), 
                     FIG_HOME)
 
@@ -135,7 +135,7 @@ describe "Split repository URL behavior" do
       # Set up invalid environment
       ENV['FIG_REMOTE_URL'] = "file:///some/path"
       ENV.delete('FIG_DOWNLOAD_URL')
-      ENV.delete('FIG_PUBLISH_URL')
+      ENV.delete('FIG_UPLOAD_URL')
 
       # Create a minimal default.fig file for the test to work
       File.open('default.fig', 'w') { |f| f.puts "config default\nend" }
@@ -145,7 +145,7 @@ describe "Split repository URL behavior" do
 
       # Should fail with clear error message
       exit_code.should_not == 0
-      err.should =~ /FIG_REMOTE_URL is set but FIG_DOWNLOAD_URL and\/or FIG_PUBLISH_URL are missing/
+      err.should =~ /FIG_REMOTE_URL is set but FIG_DOWNLOAD_URL and\/or FIG_UPLOAD_URL are missing/
 
       # Clean up
       File.unlink('default.fig') if File.exist?('default.fig')
@@ -155,9 +155,9 @@ describe "Split repository URL behavior" do
       # Make sure we have no URLs set
       ENV.delete('FIG_REMOTE_URL')
       ENV.delete('FIG_DOWNLOAD_URL')
-      ENV.delete('FIG_PUBLISH_URL')
+      ENV.delete('FIG_UPLOAD_URL')
 
-      # Publishing without publish URL
+      # Publishing without upload URL
       input = <<-END
         config default
           set FOO=BAR
@@ -166,7 +166,7 @@ describe "Split repository URL behavior" do
 
       out, err, exit_code = fig(%w<--publish simple/1.2.3>, input, :no_raise_on_error => true)
       exit_code.should_not == 0
-      err.should =~ /Must set FIG_PUBLISH_URL/
+      err.should =~ /Must set FIG_UPLOAD_URL/
 
       # Consuming without download URL
       out, err, exit_code = fig(%w<--update>, :no_raise_on_error => true)
@@ -178,13 +178,13 @@ describe "Split repository URL behavior" do
   after(:all) do
     # Clean up and restore environment
     download_dir = File.join(FIG_SPEC_BASE_DIRECTORY, 'download-repo')
-    publish_dir = File.join(FIG_SPEC_BASE_DIRECTORY, 'publish-repo')
+    upload_dir = File.join(FIG_SPEC_BASE_DIRECTORY, 'upload-repo')
     FileUtils.rm_rf(download_dir) if Dir.exist?(download_dir)
-    FileUtils.rm_rf(publish_dir) if Dir.exist?(publish_dir)
+    FileUtils.rm_rf(upload_dir) if Dir.exist?(upload_dir)
 
     # Restore environment variables to default test values
     ENV['FIG_DOWNLOAD_URL'] = FIG_DOWNLOAD_URL
-    ENV['FIG_PUBLISH_URL'] = FIG_PUBLISH_URL
+    ENV['FIG_UPLOAD_URL'] = FIG_UPLOAD_URL
     ENV.delete('FIG_REMOTE_URL')
   end
 end

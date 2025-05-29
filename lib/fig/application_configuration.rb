@@ -6,7 +6,7 @@ module Fig; end
 class Fig::ApplicationConfiguration
   attr_accessor :base_whitelisted_url
   attr_accessor :remote_download_url
-  attr_accessor :remote_publish_url
+  attr_accessor :remote_upload_url
 
   def initialize()
     @data = []
