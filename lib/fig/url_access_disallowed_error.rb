@@ -11,5 +11,10 @@ module Fig
       @urls       = urls
       @descriptor = descriptor
     end
+
+    def message
+      "URLAccessDisallowedError:\n  descriptor = #{descriptor.inspect}\n  urls = " +
+        @urls.map { |k,v| " - #{k}: #{v.inspect}" }.join("\n    ")
+    end
   end
 end

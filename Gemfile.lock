@@ -11,6 +11,7 @@ PATH
       highline (~> 3.1.0)
       json (~> 2.10.0)
       log4r (~> 1.1.0)
+      logger (~> 1.6.0)
       net-ftp (~> 0.3.0)
       net-netrc (~> 0.2.0)
       net-sftp (~> 4.0.0)
@@ -54,6 +55,7 @@ GEM
     io-console (0.8.0)
     json (2.10.1)
     log4r (1.1.10)
+    logger (1.6.0)
     net-ftp (0.3.8)
       net-protocol
       time

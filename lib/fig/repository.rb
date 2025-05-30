@@ -33,7 +33,8 @@ class Fig::Repository
     options,
     operating_system,
     local_repository_directory,
-    remote_repository_url,
+    remote_download_url,
+    remote_upload_url,
     parser,
     publish_listeners
   )
@@ -41,7 +42,8 @@ class Fig::Repository
     @options                      = options
     @operating_system             = operating_system
     @local_repository_directory   = local_repository_directory
-    @remote_repository_url        = remote_repository_url
+    @remote_download_url          = remote_download_url
+    @remote_upload_url            = remote_upload_url
     @parser                       = parser
     @publish_listeners            = publish_listeners
 
@@ -77,7 +79,7 @@ class Fig::Repository
   def list_remote_packages
     check_remote_repository_format()
 
-    paths = @operating_system.download_list(remote_repository_url())
+    paths = @operating_system.download_list(remote_download_url())
 
     return paths.reject { |path| path =~ %r< ^ #{METADATA_SUBDIRECTORY} / >xs }
   end
@@ -156,9 +158,9 @@ class Fig::Repository
 
     if not local_only
       publisher.remote_directory_for_package =
-        remote_directory_for_package(descriptor)
+        remote_directory_for_package(descriptor, for_publishing: true)
       publisher.remote_fig_file_for_package =
-        remote_fig_file_for_package(descriptor)
+        remote_fig_file_for_package(descriptor, for_publishing: true)
     end
 
     return publisher.publish_package()
@@ -174,7 +176,8 @@ class Fig::Repository
 
   private
 
-  attr_reader :remote_repository_url
+  attr_reader :remote_download_url
+  attr_reader :remote_upload_url
 
   def initialize_local_repository()
     FileUtils.mkdir_p(@local_repository_directory)
@@ -244,7 +247,7 @@ class Fig::Repository
       temp_dir = base_temp_dir()
       @operating_system.delete_and_recreate_directory(temp_dir)
       remote_version_file = Fig::URL.append_path_components(
-        remote_repository_url(), [VERSION_FILE_NAME]
+        remote_download_url(), [VERSION_FILE_NAME]
       )
       local_version_file = File.join(temp_dir, "remote-#{VERSION_FILE_NAME}")
       begin
@@ -452,9 +455,9 @@ class Fig::Repository
     return
   end
 
-  def remote_fig_file_for_package(descriptor)
+  def remote_fig_file_for_package(descriptor, for_publishing: false)
     return Fig::URL.append_path_components(
-      remote_directory_for_package(descriptor), [PACKAGE_FILE_IN_REPO]
+      remote_directory_for_package(descriptor, for_publishing: for_publishing), [PACKAGE_FILE_IN_REPO]
     )
   end
 
@@ -466,9 +469,10 @@ class Fig::Repository
     File.join(package_download_dir, PACKAGE_FILE_IN_REPO)
   end
 
-  def remote_directory_for_package(descriptor)
+  def remote_directory_for_package(descriptor, for_publishing: false)
+    url = for_publishing ? remote_upload_url() : remote_download_url()
     return Fig::URL.append_path_components(
-      remote_repository_url(), [descriptor.name, descriptor.version]
+      url, [descriptor.name, descriptor.version]
     )
   end
 

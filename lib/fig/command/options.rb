@@ -712,7 +712,7 @@ Running commands:
     end
 
     @parser.on('--no-figrc', 'ignore ~/.figrc') { @no_figrc = true }
-    @parser.on('--no-remote-figrc', 'ignore $FIG_REMOTE_URL/_meta/figrc') {
+    @parser.on('--no-remote-figrc', 'ignore $FIG_DOWNLOAD_URL/_meta/figrc') {
       @no_remote_figrc = true
     }
 

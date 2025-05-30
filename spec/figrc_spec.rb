@@ -24,16 +24,16 @@ describe 'FigRC' do
 
   def create_override_file_with_repository_url()
     tempfile = Tempfile.new('some_json_tempfile')
-    tempfile << %Q< { "default FIG_REMOTE_URL" : "#{FIG_REMOTE_URL}" } >
+    tempfile << %Q< { "default FIG_DOWNLOAD_URL" : "#{FIG_DOWNLOAD_URL}", "default FIG_UPLOAD_URL" : "#{FIG_UPLOAD_URL}" } >
     tempfile.close
     return tempfile
   end
 
   def create_remote_config(foo, bar = nil)
     FileUtils.mkdir_p(
-      File.join(FIG_REMOTE_DIR, Fig::Repository::METADATA_SUBDIRECTORY)
+      File.join(FIG_DOWNLOAD_DIR, Fig::Repository::METADATA_SUBDIRECTORY)
     )
-    figrc_path = File.join(FIG_REMOTE_DIR, Fig::FigRC::REPOSITORY_CONFIGURATION)
+    figrc_path = File.join(FIG_DOWNLOAD_DIR, Fig::FigRC::REPOSITORY_CONFIGURATION)
     file_handle = File.new(figrc_path,'w')
     file_handle.write( %Q< { "foo" : "#{foo}" > )
     if not bar.nil?
@@ -44,10 +44,11 @@ describe 'FigRC' do
     return
   end
 
-  def invoke_find(override_path, repository_url)
+  def invoke_find(override_path, download_repository_url, upload_repository_url = nil)
     return Fig::FigRC.find(
       override_path,
-      repository_url,
+      download_repository_url,
+      upload_repository_url,
       Fig::OperatingSystem.new(false),
       FIG_HOME,
       true
@@ -55,6 +56,7 @@ describe 'FigRC' do
   end
 
   before(:all) do
+    clean_up_test_environment
     set_up_test_environment
   end
 
@@ -66,7 +68,7 @@ describe 'FigRC' do
     tempfile = create_override_file('loaded as override')
 
     create_remote_config("loaded from repository (shouldn't be)")
-    configuration = invoke_find tempfile.path, FIG_REMOTE_URL
+    configuration = invoke_find tempfile.path, FIG_DOWNLOAD_URL, FIG_UPLOAD_URL
     tempfile.unlink
 
     configuration['foo'].should == 'loaded as override'
@@ -95,21 +97,21 @@ describe 'FigRC' do
   it 'retrieves configuration from repository with no override' do
     create_remote_config('loaded from repository')
 
-    configuration = invoke_find nil, FIG_REMOTE_URL
+    configuration = invoke_find nil, FIG_DOWNLOAD_URL
     configuration['foo'].should == 'loaded from repository'
   end
 
   it 'has a remote config but gets its config from the override file provided' do
     create_remote_config('loaded from remote repository')
     tempfile = create_override_file('loaded as override to override remote config')
-    configuration = invoke_find tempfile.path, FIG_REMOTE_URL
+    configuration = invoke_find tempfile.path, FIG_DOWNLOAD_URL
     configuration['foo'].should == 'loaded as override to override remote config'
   end
 
   it 'merges override file config over remote config' do
     create_remote_config('loaded from remote repository', 'should not be overwritten')
     tempfile = create_override_file('loaded as override to override remote config')
-    configuration = invoke_find tempfile.path, FIG_REMOTE_URL
+    configuration = invoke_find tempfile.path, FIG_DOWNLOAD_URL, FIG_UPLOAD_URL
     configuration['foo'].should == 'loaded as override to override remote config'
     configuration['bar'].should == 'should not be overwritten'
   end
@@ -118,7 +120,25 @@ describe 'FigRC' do
     tempfile = create_override_file_with_repository_url
     create_remote_config('loaded from repository')
 
-    configuration = invoke_find tempfile.path, nil
+    configuration = invoke_find tempfile.path, nil, nil
     configuration['foo'].should == 'loaded from repository'
+  end
+
+  it 'ignores unknown settings without errors' do
+    tempfile = Tempfile.new('unknown_settings_test')
+    tempfile << %Q< { "foo": "bar", "fig_2x_setting": "future setting value" } >
+    tempfile.close
+
+    # This should not raise any errors despite unknown setting
+    configuration = invoke_find(tempfile.path, nil)
+    
+    # Known setting works
+    configuration['foo'].should == 'bar'
+    
+    # Unknown setting is accessible but would be ignored by code not looking for it
+    configuration['fig_2x_setting'].should == 'future setting value'
+    
+    # Completely nonexistent setting returns nil
+    configuration['nonexistent'].should be_nil
   end
 end

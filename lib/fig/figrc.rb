@@ -15,10 +15,10 @@ module Fig; end
 class Fig::FigRC
   REPOSITORY_CONFIGURATION =
       "#{Fig::Repository::METADATA_SUBDIRECTORY}/figrc"
-
   def self.find(
     override_path,
-    specified_repository_url,
+    download_repository_url,
+    upload_repository_url,
     operating_system,
     fig_home,
     disable_figrc = false,
@@ -28,17 +28,44 @@ class Fig::FigRC
 
     handle_override_configuration(configuration, override_path)
     handle_figrc(configuration) if not disable_figrc
+    
+    # Check for legacy environment variable usage
+    download_url = derive_repository_url(download_repository_url, 'DOWNLOAD', configuration)
+    upload_url = derive_repository_url(upload_repository_url, 'UPLOAD', configuration)
+    remote_url = ENV['FIG_REMOTE_URL']
+    
+    has_download = !download_url.nil? && !download_url.strip.empty?
+    has_upload = !upload_url.nil? && !upload_url.strip.empty?
+    has_remote = !remote_url.nil? && !remote_url.strip.empty?
+    
+    # Error case: FIG_REMOTE_URL exists but one or both new URLs missing
+    if has_remote && (!has_download || !has_upload)
+      raise Fig::UserInputError.new(
+        'FIG_REMOTE_URL is set but FIG_DOWNLOAD_URL and/or FIG_UPLOAD_URL are missing. ' +
+        'Please set both FIG_DOWNLOAD_URL and FIG_UPLOAD_URL instead of FIG_REMOTE_URL.'
+      )
+    end
 
-    repository_url =
-      derive_repository_url(specified_repository_url, configuration)
-
-    configuration.base_whitelisted_url = repository_url
-    configuration.remote_repository_url = repository_url
-
-    handle_repository_configuration(
-      configuration, repository_url, operating_system, fig_home
-    ) if not disable_remote_figrc
-
+    # Warning case: All three variables exist
+    if has_remote && has_download && has_upload
+      $stderr.puts "WARNING: FIG_REMOTE_URL is set but will be ignored. Using FIG_DOWNLOAD_URL and FIG_UPLOAD_URL instead."
+    end
+    
+    # Set the new URL attributes
+    configuration.remote_download_url = download_url
+    configuration.remote_upload_url = upload_url
+    
+    # For backward compatibility with code expecting whitelisted URLs
+    url_for_whitelist = has_download ? download_url : nil
+    configuration.base_whitelisted_url = url_for_whitelist
+    
+    # Handle repository configuration if enabled
+    if !disable_remote_figrc && has_download
+      handle_repository_configuration(
+        configuration, download_url, operating_system, fig_home
+      )
+    end
+    
     return configuration
   end
 
@@ -73,9 +100,9 @@ class Fig::FigRC
     return
   end
 
-  def self.derive_repository_url(specified_repository_url, configuration)
+  def self.derive_repository_url(specified_repository_url, which, configuration)
     if specified_repository_url.nil?
-      return configuration['default FIG_REMOTE_URL']
+      return configuration["default FIG_#{which}_URL"]
     end
 
     if specified_repository_url.empty? || specified_repository_url =~ /\A\s*\z/

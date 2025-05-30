@@ -236,20 +236,28 @@ class Fig::Command
   def set_up_application_configuration()
     @application_configuration = Fig::FigRC.find(
       @options.figrc,
-      ENV['FIG_REMOTE_URL'],
+      ENV['FIG_DOWNLOAD_URL'],
+      ENV['FIG_UPLOAD_URL'],
       @operating_system,
       @options.home,
       @options.no_figrc?,
       @options.no_remote_figrc?
     )
 
-    if \
-          remote_operation_necessary? \
-      &&  @application_configuration.remote_repository_url.nil?
+    if remote_operation_necessary?
+      # Check if any action is a publishing operation. Note that "publish" doesn't
+      # necessarily mean "upload" b/c it could be publishing to a local repo.
+      publishing_operation = @options.actions.any? {|action| action.publish?}
 
-      raise Fig::UserInputError.new(
-        'Please define the FIG_REMOTE_URL environment variable.'
-      )
+      if publishing_operation && @application_configuration.remote_upload_url.nil?
+        raise Fig::UserInputError.new(
+          'Must set FIG_UPLOAD_URL for publish/upload operations.'
+        )
+      elsif !publishing_operation && @application_configuration.remote_download_url.nil?
+        raise Fig::UserInputError.new(
+          'Must set FIG_DOWNLOAD_URL for download repository operations.'
+        )
+      end
     end
 
     return
@@ -261,7 +269,8 @@ class Fig::Command
       @options,
       @operating_system,
       @options.home(),
-      @application_configuration.remote_repository_url,
+      @application_configuration.remote_download_url,
+      @application_configuration.remote_upload_url,
       @parser,
       @publish_listeners,
     )
