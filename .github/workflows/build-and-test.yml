@@ -293,7 +293,7 @@ jobs:
 
     container:
       # Use stable tag on master, branch-based tag on feature branches
-      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:{1}', github.repository, matrix.image) || format('ghcr.io/{0}/fig-ci:{1}-{2}', github.repository, matrix.image, needs.compute-img-tagy.outputs.BRANCH_NAME) }}
+      image: ${{ github.ref == 'refs/heads/master' && format('ghcr.io/{0}/fig-ci:{1}', github.repository, matrix.image) || format('ghcr.io/{0}/fig-ci:{1}-{2}', github.repository, matrix.image, needs.compute-img-tag.outputs.BRANCH_NAME) }}
       options: --user root
 
     defaults:
