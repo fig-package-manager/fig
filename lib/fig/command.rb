@@ -245,9 +245,10 @@ class Fig::Command
     )
 
     if remote_operation_necessary?
-      # Check if any action is a publishing operation
+      # Check if any action is a publishing operation. Note that "publish" doesn't
+      # necessarily mean "upload" b/c it could be publishing to a local repo.
       publishing_operation = @options.actions.any? {|action| action.publish?}
-      
+
       if publishing_operation && @application_configuration.remote_upload_url.nil?
         raise Fig::UserInputError.new(
           'Must set FIG_UPLOAD_URL for publish/upload operations.'
