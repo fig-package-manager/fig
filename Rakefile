@@ -22,6 +22,7 @@ def load_gemspec(specname = 'fig.gemspec')
          lib/**/*
          LICENSE
          README.md
+         spec/**/*
          ]
   ].to_a + COMPILED_GRAMMARS
 
