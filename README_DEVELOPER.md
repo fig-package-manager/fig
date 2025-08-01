@@ -24,7 +24,7 @@ maintaining interface compatibility.
    spec.add_development_dependency 'rspec', '~> 3'
    ```
 
-2. **Create your spec_helper** to use fig's test utilities:
+2. **Create your spec_helper** (`spec/spec_helper.rb`) to use fig's test utilities:
    ```ruby
    require 'bundler/setup'
    require 'your_fig_implementation/command'
@@ -43,6 +43,24 @@ maintaining interface compatibility.
    
    # Run fig tests against your implementation
    bundle exec rspec -I "$FIG_GEM_PATH" "$FIG_GEM_PATH/spec"
+   ```
+   or, add a rake task
+   ```ruby
+   desc 'Run layered-fig RSpec tests.'
+   RSpec::Core::RakeTask.new('rspec:layered') do |rspec|
+     rspec.pattern = 'spec/**/*_spec.rb'
+     rspec.rspec_opts = ['--format documentation', '--order rand']
+   end
+
+   desc 'Run fig compatibility tests against drw-fig implementation.'
+   RSpec::Core::RakeTask.new('rspec:fig' => [:build]) do |rspec|
+     fig_gem_path = Gem::Specification.find_by_name('fig').gem_dir
+     rspec.pattern = "#{fig_gem_path}/spec/**/*_spec.rb"
+     rspec.rspec_opts = ['-I', fig_gem_path, '--format', 'documentation']
+   end
+
+   desc 'Run all RSpec tests (layered-fig + fig compatibility).'
+   task :rspec => ['rspec:layered', 'rspec:fig']
    ```
 
 ### Expected Results
