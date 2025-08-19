@@ -24,6 +24,12 @@ jobs:
           OWNER=$(echo $REPO | cut -d'/' -f1)
           REPO_NAME=$(echo $REPO | cut -d'/' -f2)
           
+          # Check if the package exists before listing versions
+          if gh api /orgs/$OWNER/packages/container/fig-ci 2>&1 | grep '404'; then
+            echo "Package fig-ci not found. Nothing to clean up.  Skipping cleanup."
+            exit 0
+          fi
+
           # Get all image versions with matching branch tag
           echo "Looking for images tagged with branch: $BRANCH"
           
