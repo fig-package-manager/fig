@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    fig (2.0.0.pre.alpha.4)
+    fig (2.0.0.pre.alpha.5)
       base64 (~> 0.2.0)
       bcrypt_pbkdf (~> 1.1.0)
       bundler (~> 2.6.0)
