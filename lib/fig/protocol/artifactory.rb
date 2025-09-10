@@ -86,9 +86,64 @@ class Fig::Protocol::Artifactory
     Fig::Logging.info("Downloading list of packages at #{uri}")
     package_versions = []
 
-    ## windsurf fill in here!
+    begin
+      # Parse URI to extract base endpoint and repository key
+      # Expected format: https://artifacts.example.com/artifactory/repo-name/
+      uri_path = uri.path.chomp('/')
+      path_parts = uri_path.split('/')
+      repo_key = path_parts.last
+      base_endpoint = "#{uri.scheme}://#{uri.host}#{uri.port ? ":#{uri.port}" : ""}/#{path_parts[0..-2].join('/')}"
+      
+      # Configure Artifactory client
+      authentication = get_authentication_for(uri.host, :prompt_for_login)
+      Artifactory.configure do |config|
+        config.endpoint = base_endpoint
+        if authentication
+          config.username = authentication.username
+          config.password = authentication.password
+        end
+      end
 
-    return package_versions
+      # Use Artifactory browser API to list directories at repo root
+      browser_endpoint = URI.join(base_endpoint, '/ui/api/v1/ui/v2/nativeBrowser/')
+      list_url = URI.join(browser_endpoint, "#{repo_key}/")
+      
+      response = Artifactory.get(list_url)
+      packages = response['data'] || []
+      
+      # For each package directory, list version subdirectories
+      packages.each do |package_item|
+        next unless package_item['folder'] # Only process directories
+        
+        package_name = package_item['name']
+        next unless package_name =~ Fig::PackageDescriptor::COMPONENT_PATTERN
+        
+        begin
+          # List versions within this package
+          package_list_url = URI.join(browser_endpoint, "#{repo_key}/", "#{package_name}/")
+          version_response = Artifactory.get(package_list_url)
+          versions = version_response['data'] || []
+          
+          versions.each do |version_item|
+            next unless version_item['folder'] # Only process directories
+            
+            version_name = version_item['name']
+            next unless version_name =~ Fig::PackageDescriptor::COMPONENT_PATTERN
+            
+            package_versions << "#{package_name}/#{version_name}"
+          end
+        rescue => e
+          # Follow FTP pattern: ignore permission errors and continue processing
+          Fig::Logging.debug("Could not list versions for package #{package_name}: #{e.message}")
+        end
+      end
+      
+    rescue => e
+      # Follow FTP pattern: log error but don't fail completely
+      Fig::Logging.debug("Could not retrieve package list from #{uri}: #{e.message}")
+    end
+
+    return package_versions.sort
   end
 
   # we can know this most of the time with the stat api
