@@ -1,0 +1,145 @@
+# coding: utf-8
+
+require 'artifactory'
+require 'net/http'
+require 'uri'
+
+require 'fig/logging'
+require 'fig/network_error'
+require 'fig/package_descriptor'
+require 'fig/protocol'
+require 'fig/protocol/netrc_enabled'
+
+module Fig; end
+module Fig::Protocol; end
+
+class Fig::ArtifactoryClient
+  attr_reader :upload_url, :download_url
+
+  @upload_url = ''
+  @download_url = ''
+  @creds = ''
+
+  def initialize(options = {})
+  end
+
+  def upload_directory(local_path)
+  end
+
+  def download_package()
+  end
+
+  def discover_remote_files(remote_path)
+    begin
+      # Use artifactory gem to browse the repository - search for files in the specific path
+      # Instead of wildcard search, search for files that match the remote path pattern
+      search_pattern = "#{remote_path}/*"
+      puts "  Searching for pattern: #{search_pattern}" if @verbose
+      puts "  In repository: #{@download_repo_key}" if @verbose
+      
+      top_host = @base_endpoint.split('/')
+      browser_endpoint = URI.join(@base_endpoint, '/ui/api/v1/ui/v2/nativeBrowser/')
+      
+      list_url = URI.join(browser_endpoint, "#{@download_repo_key}/", remote_path)
+      # Show equivalent curl command for search
+      if @verbose
+        auth_header = @credentials ? "-u #{@credentials.split(':').first}:***" : ""
+        puts "  Equivalent curl: curl #{auth_header} '#{list_url}'"
+      end
+
+      r = Artifactory.get(list_url)
+      artifacts = r['data']
+      
+      puts "  Initial search found #{artifacts.size} artifacts" if @verbose
+      
+      artifacts.each do |artifact|
+        relative_path = [ remote_path, artifact['name'] ].join('/')
+        
+        files << {
+          remote_path: relative_path,
+          relative_path: artifact['name'],
+          size: artifact['size'] || 0
+        }
+        
+        puts "  Found remote: #{relative_path} (#{format_size(artifact.size || 0)})" if @verbose
+      end
+    rescue => e
+      puts "Warning: Could not browse remote repository: #{e.message}" if @verbose
+      puts "Assuming empty repository for dry-run purposes" if @verbose
+    end
+    
+    files
+  end
+end
+
+# file transfers/storage using https as the transport and artifactory as the backing store
+class Fig::Protocol::Artifactory
+  include Fig::Protocol
+  include Fig::Protocol::NetRCEnabled
+
+  def initialize()
+    initialize_netrc
+  end
+
+  # must return a list of strings in the form <package_name>/<version>
+  def download_list(uri)
+    Fig::Logging.info("Downloading list of packages at #{uri}")
+    package_versions = []
+
+    ## windsurf fill in here!
+
+    return package_versions
+  end
+
+  # we can know this most of the time with the stat api
+  def path_up_to_date?(uri, path, prompt_for_login)
+    Fig::Logging.info("Checking if #{path} is up to date at #{uri}")
+
+    ## windsurf fill in here!
+
+    return nil
+  end
+
+  def download(uri, path)
+    Fig::Logging.info("Downloading from artifactory: #{uri}")
+
+    ## windsurf fill in here!
+
+  end
+
+  def upload(local_file, uri)
+    Fig::Logging.info("Uploading #{local_file} to  artifactory at #{uri}")
+
+    ## windsurf fill in here!
+
+  end
+
+  private
+
+  # swiped directly from http.rb; if no changes are required, then consider refactoring
+  def download_via_http_get(uri_string, file, redirection_limit = 10)
+    if redirection_limit < 1
+      Fig::Logging.debug 'Too many HTTP redirects.'
+      raise Fig::FileNotFoundError.new 'Too many HTTP redirects.', uri_string
+    end
+
+    response = Net::HTTP.get_response(URI(uri_string))
+
+    case response
+    when Net::HTTPSuccess then
+      file.write(response.body)
+    when Net::HTTPRedirection then
+      location = response['location']
+      Fig::Logging.debug "Redirecting to #{location}."
+      download_via_http_get(location, file, redirection_limit - 1)
+    else
+      Fig::Logging.debug "Download failed: #{response.code} #{response.message}."
+      raise Fig::FileNotFoundError.new(
+        "Download failed: #{response.code} #{response.message}.", uri_string
+      )
+    end
+
+    return
+  end
+  
+end
