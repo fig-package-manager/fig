@@ -42,6 +42,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'base64', '~> 0.2.0'
   spec.add_dependency 'stringio', '~> 3.1.0'
   spec.add_dependency 'bundler',         '~> 2.6.0'
+  spec.add_dependency 'artifactory', '~> 3.0.17'
+  spec.add_dependency 'rexml', '~> 3.0'
 
   spec.add_development_dependency 'rdoc',              '~> 6.12.0'
   spec.add_development_dependency 'rake',            '~> 13.2.0'

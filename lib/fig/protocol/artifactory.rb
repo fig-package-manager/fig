@@ -1,6 +1,5 @@
 # coding: utf-8
 
-require 'artifactory'
 require 'net/http'
 require 'uri'
 
@@ -9,6 +8,8 @@ require 'fig/network_error'
 require 'fig/package_descriptor'
 require 'fig/protocol'
 require 'fig/protocol/netrc_enabled'
+
+require 'artifactory'
 
 module Fig; end
 module Fig::Protocol; end
@@ -77,6 +78,9 @@ class Fig::Protocol::Artifactory
   include Fig::Protocol
   include Fig::Protocol::NetRCEnabled
 
+  # Artifactory browser API endpoint (undocumented API)
+  BROWSER_API_PATH = 'ui/api/v1/ui/v2/nativeBrowser/'
+
   def initialize()
     initialize_netrc
   end
@@ -90,13 +94,14 @@ class Fig::Protocol::Artifactory
       # Parse URI to extract base endpoint and repository key
       # Expected format: https://artifacts.example.com/artifactory/repo-name/
       uri_path = uri.path.chomp('/')
-      path_parts = uri_path.split('/')
+      path_parts = uri_path.split('/').reject(&:empty?)
       repo_key = path_parts.last
-      base_endpoint = "#{uri.scheme}://#{uri.host}#{uri.port ? ":#{uri.port}" : ""}/#{path_parts[0..-2].join('/')}"
+      artifactory_path = path_parts[0..-2].join('/')
+      base_endpoint = "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != uri.default_port ? ":#{uri.port}" : ""}/#{artifactory_path}/"
       
       # Configure Artifactory client
       authentication = get_authentication_for(uri.host, :prompt_for_login)
-      Artifactory.configure do |config|
+      ::Artifactory.configure do |config|
         config.endpoint = base_endpoint
         if authentication
           config.username = authentication.username
@@ -105,11 +110,9 @@ class Fig::Protocol::Artifactory
       end
 
       # Use Artifactory browser API to list directories at repo root
-      browser_endpoint = URI.join(base_endpoint, '/ui/api/v1/ui/v2/nativeBrowser/')
-      list_url = URI.join(browser_endpoint, "#{repo_key}/")
+      list_url = URI.join(base_endpoint, BROWSER_API_PATH, "#{repo_key}/")
       
-      response = Artifactory.get(list_url)
-      packages = response['data'] || []
+      packages = get_all_artifactory_entries(list_url)
       
       # For each package directory, list version subdirectories
       packages.each do |package_item|
@@ -120,9 +123,8 @@ class Fig::Protocol::Artifactory
         
         begin
           # List versions within this package
-          package_list_url = URI.join(browser_endpoint, "#{repo_key}/", "#{package_name}/")
-          version_response = Artifactory.get(package_list_url)
-          versions = version_response['data'] || []
+          package_list_url = URI.join(base_endpoint, BROWSER_API_PATH, "#{repo_key}/", "#{package_name}/")
+          versions = get_all_artifactory_entries(package_list_url)
           
           versions.each do |version_item|
             next unless version_item['folder'] # Only process directories
@@ -170,6 +172,28 @@ class Fig::Protocol::Artifactory
   end
 
   private
+
+  # Get all entries from Artifactory browser API with pagination support
+  # Returns array of all entries, handling continueState pagination
+  def get_all_artifactory_entries(base_url)
+    record_num = ENV['FIG_ARTIFACTORY_PAGESIZE']&.to_i || 3000
+    
+    loop do
+      # Build URL with recordNum parameter
+      url = URI(base_url.to_s)
+      url.query = "recordNum=#{record_num}"
+      
+      response = ::Artifactory.get(url)
+      entries = response['data'] || []
+      
+      # Check if there are more entries to fetch
+      continue_state = response['continueState']
+      return entries if continue_state.nil? || continue_state == -1
+      
+      # Use continueState as the recordNum for the next request
+      record_num = continue_state
+    end
+  end
 
   # swiped directly from http.rb; if no changes are required, then consider refactoring
   def download_via_http_get(uri_string, file, redirection_limit = 10)
