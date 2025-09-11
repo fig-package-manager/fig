@@ -8,6 +8,9 @@ describe Fig::Protocol::Artifactory do
   let(:base_url) { URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/') }
 
   describe '#get_all_artifactory_entries' do
+    let(:mock_client) { double('Artifactory::Client') }
+    let(:base_url) { URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/') }
+
     before do
       # Stub netrc authentication
       allow(artifactory).to receive(:get_authentication_for).and_return(nil)
@@ -23,11 +26,11 @@ describe Fig::Protocol::Artifactory do
           'continueState' => -1
         }
         
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(response)
 
-        result = artifactory.send(:get_all_artifactory_entries, base_url)
+        result = artifactory.send(:get_all_artifactory_entries, base_url, mock_client)
         expect(result).to eq(response['data'])
       end
     end
@@ -51,15 +54,15 @@ describe Fig::Protocol::Artifactory do
           'continueState' => -1
         }
 
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(first_response)
           
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=cursor123'))
           .and_return(final_response)
 
-        result = artifactory.send(:get_all_artifactory_entries, base_url)
+        result = artifactory.send(:get_all_artifactory_entries, base_url, mock_client)
         expect(result).to eq(final_response['data'])
       end
     end
@@ -71,11 +74,11 @@ describe Fig::Protocol::Artifactory do
           'continueState' => nil
         }
         
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(response)
 
-        result = artifactory.send(:get_all_artifactory_entries, base_url)
+        result = artifactory.send(:get_all_artifactory_entries, base_url, mock_client)
         expect(result).to eq(response['data'])
       end
     end
@@ -89,11 +92,11 @@ describe Fig::Protocol::Artifactory do
           'continueState' => -1
         }
         
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=5000'))
           .and_return(response)
 
-        result = artifactory.send(:get_all_artifactory_entries, base_url)
+        result = artifactory.send(:get_all_artifactory_entries, base_url, mock_client)
         expect(result).to eq(response['data'])
       end
     end
@@ -102,11 +105,11 @@ describe Fig::Protocol::Artifactory do
       it 'returns empty array' do
         response = { 'continueState' => -1 }
         
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(response)
 
-        result = artifactory.send(:get_all_artifactory_entries, base_url)
+        result = artifactory.send(:get_all_artifactory_entries, base_url, mock_client)
         expect(result).to eq([])
       end
     end
@@ -115,9 +118,10 @@ describe Fig::Protocol::Artifactory do
   describe '#download_list' do
     let(:uri) { URI('https://artifacts.example.com/artifactory/repo-name/') }
     let(:artifactory) { Fig::Protocol::Artifactory.new }
+    let(:mock_client) { double('Artifactory::Client') }
 
     before do
-      allow(::Artifactory).to receive(:configure)
+      allow(::Artifactory::Client).to receive(:new).and_return(mock_client)
       # Stub netrc authentication
       allow(artifactory).to receive(:get_authentication_for).and_return(nil)
     end
@@ -152,15 +156,15 @@ describe Fig::Protocol::Artifactory do
         }
 
         # Expect calls in order
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(packages_response)
 
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/package-a/?recordNum=3000'))
           .and_return(package_a_versions)
 
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/package-b/?recordNum=3000'))
           .and_return(package_b_versions)
 
@@ -180,7 +184,7 @@ describe Fig::Protocol::Artifactory do
           'continueState' => -1
         }
 
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(empty_response)
 
@@ -204,15 +208,15 @@ describe Fig::Protocol::Artifactory do
           'continueState' => -1
         }
 
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(packages_response)
 
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/good-package/?recordNum=3000'))
           .and_return(good_versions)
 
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/bad-package/?recordNum=3000'))
           .and_raise(StandardError.new('API error'))
 
@@ -241,11 +245,11 @@ describe Fig::Protocol::Artifactory do
           'continueState' => -1
         }
 
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(packages_response)
 
-        expect(::Artifactory).to receive(:get)
+        expect(mock_client).to receive(:get)
           .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/valid-package/?recordNum=3000'))
           .and_return(valid_versions)
 

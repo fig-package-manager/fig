@@ -99,20 +99,19 @@ class Fig::Protocol::Artifactory
       artifactory_path = path_parts[0..-2].join('/')
       base_endpoint = "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != uri.default_port ? ":#{uri.port}" : ""}/#{artifactory_path}/"
       
-      # Configure Artifactory client
+      # Create Artifactory client instance
       authentication = get_authentication_for(uri.host, :prompt_for_login)
-      ::Artifactory.configure do |config|
-        config.endpoint = base_endpoint
-        if authentication
-          config.username = authentication.username
-          config.password = authentication.password
-        end
+      client_config = { endpoint: base_endpoint }
+      if authentication
+        client_config[:username] = authentication.username
+        client_config[:password] = authentication.password
       end
+      client = ::Artifactory::Client.new(client_config)
 
       # Use Artifactory browser API to list directories at repo root
       list_url = URI.join(base_endpoint, BROWSER_API_PATH, "#{repo_key}/")
       
-      packages = get_all_artifactory_entries(list_url)
+      packages = get_all_artifactory_entries(list_url, client)
       
       # For each package directory, list version subdirectories
       packages.each do |package_item|
@@ -124,7 +123,7 @@ class Fig::Protocol::Artifactory
         begin
           # List versions within this package
           package_list_url = URI.join(base_endpoint, BROWSER_API_PATH, "#{repo_key}/", "#{package_name}/")
-          versions = get_all_artifactory_entries(package_list_url)
+          versions = get_all_artifactory_entries(package_list_url, client)
           
           versions.each do |version_item|
             next unless version_item['folder'] # Only process directories
@@ -175,7 +174,7 @@ class Fig::Protocol::Artifactory
 
   # Get all entries from Artifactory browser API with pagination support
   # Returns array of all entries, handling continueState pagination
-  def get_all_artifactory_entries(base_url)
+  def get_all_artifactory_entries(base_url, client)
     record_num = ENV['FIG_ARTIFACTORY_PAGESIZE']&.to_i || 3000
     
     loop do
@@ -183,7 +182,7 @@ class Fig::Protocol::Artifactory
       url = URI(base_url.to_s)
       url.query = "recordNum=#{record_num}"
       
-      response = ::Artifactory.get(url)
+      response = client.get(url)
       entries = response['data'] || []
       
       # Check if there are more entries to fetch
