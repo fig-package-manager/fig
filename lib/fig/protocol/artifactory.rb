@@ -185,13 +185,102 @@ class Fig::Protocol::Artifactory
   end
 
   def upload(local_file, uri)
-    Fig::Logging.info("Uploading #{local_file} to  artifactory at #{uri}")
+    Fig::Logging.info("Uploading #{local_file} to artifactory at #{uri}")
 
-    ## windsurf fill in here!
+    begin
+      # Parse URI to extract base endpoint and repository key
+      # Expected format: https://artifacts.example.com/artifactory/repo-name/path/to/file
+      uri_path = uri.path.chomp('/')
+      path_parts = uri_path.split('/').reject(&:empty?)
+      
+      # Find artifactory in the path and split accordingly
+      artifactory_index = path_parts.index('artifactory')
+      raise ArgumentError, "URI must contain 'artifactory' in path: #{uri}" unless artifactory_index
+      
+      repo_key = path_parts[artifactory_index + 1]
+      raise ArgumentError, "No repository key found in URI: #{uri}" unless repo_key
+      
+      # Everything after repo_key is the target path within the repository
+      target_path = path_parts[(artifactory_index + 2)..-1]&.join('/') || ''
+      
+      # Base endpoint includes everything up to and including /artifactory
+      artifactory_path = path_parts[0..artifactory_index].join('/')
+      base_endpoint = "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != uri.default_port ? ":#{uri.port}" : ""}/#{artifactory_path}"
+      
+      # Create Artifactory client instance
+      authentication = get_authentication_for(uri.host, :prompt_for_login)
+      client_config = { endpoint: base_endpoint }
+      if authentication
+        client_config[:username] = authentication.username
+        client_config[:password] = authentication.password
+      end
+      client = ::Artifactory::Client.new(client_config)
 
+      # Log equivalent curl command for debugging
+      if authentication
+        Fig::Logging.debug("Equivalent curl: curl -u #{authentication.username}:*** -T '#{local_file}' '#{uri}'")
+      else
+        Fig::Logging.debug("Equivalent curl: curl -T '#{local_file}' '#{uri}'")
+      end
+
+      # Create artifact and upload
+      artifact = ::Artifactory::Resource::Artifact.new(local_path: local_file)
+      
+      # Collect metadata for upload
+      metadata = collect_upload_metadata(local_file, target_path, uri)
+      
+      # Upload with metadata
+      artifact.upload(repo_key, target_path, metadata, client: client)
+      
+      Fig::Logging.info("Successfully uploaded #{local_file} to #{uri}")
+      
+    rescue ArgumentError => e
+      # Let ArgumentError bubble up for invalid URIs
+      raise e
+    rescue => e
+      Fig::Logging.debug("Upload failed: #{e.message}")
+      raise Fig::NetworkError.new("Failed to upload #{local_file} to #{uri}: #{e.message}")
+    end
   end
 
   private
+
+  # Collect metadata for file upload, using fig. prefix instead of upload. prefix
+  def collect_upload_metadata(local_file, target_path, uri)
+    require 'socket'
+    require 'digest'
+    require 'time'
+    
+    file_stat = ::File.stat(local_file)
+    
+    metadata = {
+      # Basic file information
+      'fig.original_path' => local_file,
+      'fig.target_path' => target_path,
+      'fig.file_size' => file_stat.size.to_s,
+      'fig.file_mtime' => file_stat.mtime.iso8601,
+      
+      # Upload context
+      'fig.hostname' => Socket.gethostname,
+      'fig.login' => ENV['USER'] || ENV['USERNAME'] || 'unknown',
+      'fig.timestamp' => Time.now.iso8601,
+      'fig.epoch' => Time.now.to_i.to_s,
+      
+      # Tool information
+      'fig.tool' => 'fig-artifactory-protocol',
+      'fig.uri' => uri.to_s,
+      
+      # Checksums for integrity
+      'fig.sha1' => Digest::SHA1.file(local_file).hexdigest,
+      'fig.md5' => Digest::MD5.file(local_file).hexdigest,
+      
+      # TODO: Add package/version metadata from URI path or local_file decoration
+      # TODO: Support user-injected metadata via environment variables or callbacks
+    }
+    
+    Fig::Logging.debug("Upload metadata: #{metadata.keys.join(', ')}")
+    metadata
+  end
 
   # Get all entries from Artifactory browser API with pagination support
   # Returns array of all entries, handling continueState pagination

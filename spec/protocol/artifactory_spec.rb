@@ -329,4 +329,75 @@ describe Fig::Protocol::Artifactory do
       artifactory.download(uri, path, prompt_for_login)
     end
   end
+
+  describe '#upload' do
+    let(:local_file) { '/tmp/test.txt' }
+    let(:uri) { URI('https://artifacts.example.com/artifactory/repo-name/path/to/file.txt') }
+    let(:mock_client) { double('Artifactory::Client') }
+    let(:mock_artifact) { double('Artifactory::Resource::Artifact') }
+    let(:mock_authentication) { double('authentication', username: 'testuser', password: 'testpass') }
+
+    before do
+      allow(artifactory).to receive(:get_authentication_for).and_return(mock_authentication)
+      allow(::Artifactory::Client).to receive(:new).and_return(mock_client)
+      allow(::Artifactory::Resource::Artifact).to receive(:new).and_return(mock_artifact)
+      allow(::File).to receive(:stat).and_return(double('stat', size: 1024, mtime: Time.now))
+      allow(Digest::SHA1).to receive(:file).and_return(double(hexdigest: 'sha1hash'))
+      allow(Digest::MD5).to receive(:file).and_return(double(hexdigest: 'md5hash'))
+    end
+
+    it 'parses URI correctly and uploads file' do
+      expect(::Artifactory::Client).to receive(:new).with({
+        endpoint: 'https://artifacts.example.com/artifactory',
+        username: 'testuser',
+        password: 'testpass'
+      })
+      
+      expect(mock_artifact).to receive(:upload).with(
+        'repo-name',
+        'path/to/file.txt',
+        hash_including('fig.original_path' => local_file),
+        client: mock_client
+      )
+
+      artifactory.upload(local_file, uri)
+    end
+
+    it 'logs equivalent curl command' do
+      allow(mock_artifact).to receive(:upload)
+      
+      expect(Fig::Logging).to receive(:debug).with(
+        "Equivalent curl: curl -u testuser:*** -T '#{local_file}' '#{uri}'"
+      ).ordered
+      expect(Fig::Logging).to receive(:debug).with(
+        /Upload metadata:/
+      ).ordered
+
+      artifactory.upload(local_file, uri)
+    end
+
+    it 'raises error for invalid URI without artifactory in path' do
+      invalid_uri = URI('https://example.com/repo-name/file.txt')
+      
+      expect {
+        artifactory.upload(local_file, invalid_uri)
+      }.to raise_error(ArgumentError, /URI must contain 'artifactory' in path/)
+    end
+
+    it 'collects metadata with fig. prefix' do
+      metadata_hash = nil
+      allow(mock_artifact).to receive(:upload) do |repo, path, metadata, options|
+        metadata_hash = metadata
+      end
+
+      artifactory.upload(local_file, uri)
+
+      expect(metadata_hash).to include(
+        'fig.original_path' => local_file,
+        'fig.target_path' => 'path/to/file.txt',
+        'fig.tool' => 'fig-artifactory-protocol'
+      )
+      expect(metadata_hash.keys).to all(start_with('fig.'))
+    end
+  end
 end
