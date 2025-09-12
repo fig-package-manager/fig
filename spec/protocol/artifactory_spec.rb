@@ -258,4 +258,75 @@ describe Fig::Protocol::Artifactory do
       end
     end
   end
+
+  describe '#download' do
+    let(:uri) { URI('https://artifacts.example.com/artifactory/repo-name/package/version/file.tar.gz') }
+    let(:path) { '/tmp/test_file.tar.gz' }
+    let(:prompt_for_login) { false }
+    let(:mock_file) { double('File') }
+    let(:mock_auth) { double('Authentication', username: 'testuser', password: 'testpass') }
+
+    before do
+      allow(::File).to receive(:open).with(path, 'wb').and_yield(mock_file)
+      allow(mock_file).to receive(:binmode)
+    end
+
+    context 'with authentication' do
+      it 'downloads file and logs curl equivalent with auth' do
+        allow(artifactory).to receive(:get_authentication_for).with(uri.host, prompt_for_login).and_return(mock_auth)
+        allow(artifactory).to receive(:download_via_http_get).with(uri.to_s, mock_file)
+
+        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -u testuser:*** -o '#{path}' '#{uri}'")
+
+        result = artifactory.download(uri, path, prompt_for_login)
+        expect(result).to be true
+      end
+    end
+
+    context 'without authentication' do
+      it 'downloads file and logs curl equivalent without auth' do
+        allow(artifactory).to receive(:get_authentication_for).with(uri.host, prompt_for_login).and_return(nil)
+        allow(artifactory).to receive(:download_via_http_get).with(uri.to_s, mock_file)
+
+        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{uri}'")
+
+        result = artifactory.download(uri, path, prompt_for_login)
+        expect(result).to be true
+      end
+    end
+
+    context 'when download_via_http_get raises SystemCallError' do
+      it 'wraps error in FileNotFoundError' do
+        allow(artifactory).to receive(:get_authentication_for).and_return(nil)
+        system_error = SystemCallError.new('Connection failed')
+        allow(artifactory).to receive(:download_via_http_get).and_raise(system_error)
+
+        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{uri}'")
+        expect(Fig::Logging).to receive(:debug).with('unknown error - Connection failed')
+        expect { artifactory.download(uri, path, prompt_for_login) }.to raise_error(Fig::FileNotFoundError, 'unknown error - Connection failed')
+      end
+    end
+
+    context 'when download_via_http_get raises SocketError' do
+      it 'wraps error in FileNotFoundError' do
+        allow(artifactory).to receive(:get_authentication_for).and_return(nil)
+        socket_error = SocketError.new('Host not found')
+        allow(artifactory).to receive(:download_via_http_get).and_raise(socket_error)
+
+        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{uri}'")
+        expect(Fig::Logging).to receive(:debug).with('Host not found')
+        expect { artifactory.download(uri, path, prompt_for_login) }.to raise_error(Fig::FileNotFoundError, 'Host not found')
+      end
+    end
+
+    it 'opens file in binary write mode' do
+      allow(artifactory).to receive(:get_authentication_for).and_return(nil)
+      allow(artifactory).to receive(:download_via_http_get)
+
+      expect(::File).to receive(:open).with(path, 'wb')
+      expect(mock_file).to receive(:binmode)
+
+      artifactory.download(uri, path, prompt_for_login)
+    end
+  end
 end

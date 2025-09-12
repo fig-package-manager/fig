@@ -156,11 +156,32 @@ class Fig::Protocol::Artifactory
     return nil
   end
 
-  def download(uri, path)
+  def download(uri, path, prompt_for_login)
     Fig::Logging.info("Downloading from artifactory: #{uri}")
 
-    ## windsurf fill in here!
+    # Log equivalent curl command for debugging
+    authentication = get_authentication_for(uri.host, prompt_for_login)
+    if authentication
+      Fig::Logging.debug("Equivalent curl: curl -u #{authentication.username}:*** -o '#{path}' '#{uri}'")
+    else
+      Fig::Logging.debug("Equivalent curl: curl -o '#{path}' '#{uri}'")
+    end
 
+    ::File.open(path, 'wb') do |file|
+      file.binmode
+
+      begin
+        download_via_http_get(uri.to_s, file)
+      rescue SystemCallError => error
+        Fig::Logging.debug error.message
+        raise Fig::FileNotFoundError.new error.message, uri
+      rescue SocketError => error
+        Fig::Logging.debug error.message
+        raise Fig::FileNotFoundError.new error.message, uri
+      end
+    end
+
+    return true
   end
 
   def upload(local_file, uri)
