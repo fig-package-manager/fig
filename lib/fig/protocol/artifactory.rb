@@ -151,9 +151,57 @@ class Fig::Protocol::Artifactory
   def path_up_to_date?(uri, path, prompt_for_login)
     Fig::Logging.info("Checking if #{path} is up to date at #{uri}")
 
-    ## windsurf fill in here!
-
-    return nil
+    begin
+      # Parse URI to extract base endpoint and repository key (same as upload method)
+      uri_path = uri.path.chomp('/')
+      path_parts = uri_path.split('/').reject(&:empty?)
+      
+      # Find artifactory in the path and split accordingly
+      artifactory_index = path_parts.index('artifactory')
+      raise ArgumentError, "URI must contain 'artifactory' in path: #{uri}" unless artifactory_index
+      
+      repo_key = path_parts[artifactory_index + 1]
+      raise ArgumentError, "No repository key found in URI: #{uri}" unless repo_key
+      
+      # Everything after repo_key is the target path within the repository
+      remote_path = path_parts[(artifactory_index + 2)..-1]&.join('/') || ''
+      
+      # Base endpoint includes everything up to and including /artifactory
+      artifactory_path = path_parts[0..artifactory_index].join('/')
+      base_endpoint = "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != uri.default_port ? ":#{uri.port}" : ""}/#{artifactory_path}"
+      
+      # Create Artifactory client instance (same as upload method)
+      authentication = get_authentication_for(uri.host, prompt_for_login)
+      client_config = { endpoint: base_endpoint }
+      if authentication
+        client_config[:username] = authentication.username
+        client_config[:password] = authentication.password
+      end
+      client = ::Artifactory::Client.new(client_config)
+      
+      # use storage api instead of search - more reliable for virtual repos
+      storage_url = "/api/storage/#{repo_key}/#{remote_path}"
+      
+      response = client.get(storage_url)
+      
+      # compare sizes first
+      if response['size'] != ::File.size(path)
+        return false
+      end
+      
+      # compare modification times
+      remote_mtime = Time.parse(response['lastModified'])
+      local_mtime = ::File.mtime(path)
+      
+      if remote_mtime <= local_mtime
+        return true
+      end
+      
+      return false
+    rescue => error
+      Fig::Logging.debug "Error checking if #{path} is up to date: #{error.message}"
+      return nil
+    end
   end
 
   def download(uri, path, prompt_for_login)
