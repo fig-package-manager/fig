@@ -157,15 +157,15 @@ describe Fig::Protocol::Artifactory do
 
         # Expect calls in order
         expect(mock_client).to receive(:get)
-          .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
+          .with(URI('https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(packages_response)
 
         expect(mock_client).to receive(:get)
-          .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/package-a/?recordNum=3000'))
+          .with(URI('https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/package-a/?recordNum=3000'))
           .and_return(package_a_versions)
 
         expect(mock_client).to receive(:get)
-          .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/package-b/?recordNum=3000'))
+          .with(URI('https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/package-b/?recordNum=3000'))
           .and_return(package_b_versions)
 
         result = artifactory.download_list(uri)
@@ -185,7 +185,7 @@ describe Fig::Protocol::Artifactory do
         }
 
         expect(mock_client).to receive(:get)
-          .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
+          .with(URI('https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(empty_response)
 
         result = artifactory.download_list(uri)
@@ -209,15 +209,15 @@ describe Fig::Protocol::Artifactory do
         }
 
         expect(mock_client).to receive(:get)
-          .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
+          .with(URI('https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(packages_response)
 
         expect(mock_client).to receive(:get)
-          .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/good-package/?recordNum=3000'))
+          .with(URI('https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/good-package/?recordNum=3000'))
           .and_return(good_versions)
 
         expect(mock_client).to receive(:get)
-          .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/bad-package/?recordNum=3000'))
+          .with(URI('https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/bad-package/?recordNum=3000'))
           .and_raise(StandardError.new('API error'))
 
         # Should continue processing despite error
@@ -246,11 +246,11 @@ describe Fig::Protocol::Artifactory do
         }
 
         expect(mock_client).to receive(:get)
-          .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
+          .with(URI('https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=3000'))
           .and_return(packages_response)
 
         expect(mock_client).to receive(:get)
-          .with(URI('https://artifacts.example.com/artifactory/ui/api/v1/ui/v2/nativeBrowser/repo-name/valid-package/?recordNum=3000'))
+          .with(URI('https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/valid-package/?recordNum=3000'))
           .and_return(valid_versions)
 
         result = artifactory.download_list(uri)
