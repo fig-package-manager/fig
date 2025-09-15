@@ -93,11 +93,7 @@ class Fig::Protocol::Artifactory
     begin
       # Parse URI to extract base endpoint and repository key
       # Expected format: https://artifacts.example.com/artifactory/repo-name/
-      uri_path = uri.path.chomp('/')
-      path_parts = uri_path.split('/').reject(&:empty?)
-      repo_key = path_parts.last
-      artifactory_path = path_parts[0..-2].join('/')
-      base_endpoint = "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != uri.default_port ? ":#{uri.port}" : ""}/#{artifactory_path}/"
+      parse_uri(uri) => { repo_key:, base_endpoint: }
       
       # Create Artifactory client instance
       authentication = get_authentication_for(uri.host, :prompt_for_login)
@@ -147,63 +143,6 @@ class Fig::Protocol::Artifactory
     return package_versions.sort
   end
 
-  # we can know this most of the time with the stat api
-  def path_up_to_date?(uri, path, prompt_for_login)
-    Fig::Logging.info("Checking if #{path} is up to date at #{uri}")
-
-    begin
-      # Parse URI to extract base endpoint and repository key (same as upload method)
-      uri_path = uri.path.chomp('/')
-      path_parts = uri_path.split('/').reject(&:empty?)
-      
-      # Find artifactory in the path and split accordingly
-      artifactory_index = path_parts.index('artifactory')
-      raise ArgumentError, "URI must contain 'artifactory' in path: #{uri}" unless artifactory_index
-      
-      repo_key = path_parts[artifactory_index + 1]
-      raise ArgumentError, "No repository key found in URI: #{uri}" unless repo_key
-      
-      # Everything after repo_key is the target path within the repository
-      remote_path = path_parts[(artifactory_index + 2)..-1]&.join('/') || ''
-      
-      # Base endpoint includes everything up to and including /artifactory
-      artifactory_path = path_parts[0..artifactory_index].join('/')
-      base_endpoint = "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != uri.default_port ? ":#{uri.port}" : ""}/#{artifactory_path}"
-      
-      # Create Artifactory client instance (same as upload method)
-      authentication = get_authentication_for(uri.host, prompt_for_login)
-      client_config = { endpoint: base_endpoint }
-      if authentication
-        client_config[:username] = authentication.username
-        client_config[:password] = authentication.password
-      end
-      client = ::Artifactory::Client.new(client_config)
-      
-      # use storage api instead of search - more reliable for virtual repos
-      storage_url = "/api/storage/#{repo_key}/#{remote_path}"
-      
-      response = client.get(storage_url)
-      
-      # compare sizes first
-      if response['size'] != ::File.size(path)
-        return false
-      end
-      
-      # compare modification times
-      remote_mtime = Time.parse(response['lastModified'])
-      local_mtime = ::File.mtime(path)
-      
-      if remote_mtime <= local_mtime
-        return true
-      end
-      
-      return false
-    rescue => error
-      Fig::Logging.debug "Error checking if #{path} is up to date: #{error.message}"
-      return nil
-    end
-  end
-
   def download(uri, path, prompt_for_login)
     Fig::Logging.info("Downloading from artifactory: #{uri}")
 
@@ -236,25 +175,8 @@ class Fig::Protocol::Artifactory
     Fig::Logging.info("Uploading #{local_file} to artifactory at #{uri}")
 
     begin
-      # Parse URI to extract base endpoint and repository key
-      # Expected format: https://artifacts.example.com/artifactory/repo-name/path/to/file
-      uri_path = uri.path.chomp('/')
-      path_parts = uri_path.split('/').reject(&:empty?)
-      
-      # Find artifactory in the path and split accordingly
-      artifactory_index = path_parts.index('artifactory')
-      raise ArgumentError, "URI must contain 'artifactory' in path: #{uri}" unless artifactory_index
-      
-      repo_key = path_parts[artifactory_index + 1]
-      raise ArgumentError, "No repository key found in URI: #{uri}" unless repo_key
-      
-      # Everything after repo_key is the target path within the repository
-      target_path = path_parts[(artifactory_index + 2)..-1]&.join('/') || ''
-      
-      # Base endpoint includes everything up to and including /artifactory
-      artifactory_path = path_parts[0..artifactory_index].join('/')
-      base_endpoint = "#{uri.scheme}://#{uri.host}#{uri.port && uri.port != uri.default_port ? ":#{uri.port}" : ""}/#{artifactory_path}"
-      
+      parse_uri(uri) => { repo_key:, base_endpoint:, target_path: }
+
       # Create Artifactory client instance
       authentication = get_authentication_for(uri.host, :prompt_for_login)
       client_config = { endpoint: base_endpoint }
@@ -291,7 +213,71 @@ class Fig::Protocol::Artifactory
     end
   end
 
+  # we can know this most of the time with the stat api
+  def path_up_to_date?(uri, path, prompt_for_login)
+    Fig::Logging.info("Checking if #{path} is up to date at #{uri}")
+
+    begin
+      parse_uri(uri) => { repo_key:, base_endpoint:, target_path: }
+
+
+      # Create Artifactory client instance (same as upload method)
+      authentication = get_authentication_for(uri.host, prompt_for_login)
+      client_config = { endpoint: base_endpoint }
+      if authentication
+        client_config[:username] = authentication.username
+        client_config[:password] = authentication.password
+      end
+      client = ::Artifactory::Client.new(client_config)
+      
+      # use storage api instead of search - more reliable for virtual repos
+      storage_url = "/api/storage/#{repo_key}/#{target_path}"
+      
+      response = client.get(storage_url)
+      
+      # compare sizes first
+      if response['size'] != ::File.size(path)
+        return false
+      end
+      
+      # compare modification times
+      remote_mtime = Time.parse(response['lastModified'])
+      local_mtime = ::File.mtime(path)
+      
+      if remote_mtime <= local_mtime
+        return true
+      end
+      
+      return false
+    rescue => error
+      Fig::Logging.debug "Error checking if #{path} is up to date: #{error.message}"
+      return nil
+    end
+  end
+
   private
+
+  def parse_uri(uri)
+    uri_path = uri.path.chomp('/')
+    path_parts = uri_path.split('/').reject(&:empty?)
+    
+    # Find artifactory in the path and split accordingly
+    artifactory_index = path_parts.index('artifactory')
+    raise ArgumentError, "URI must contain 'artifactory' in path: #{uri}" unless artifactory_index
+    
+    repo_key = path_parts[artifactory_index + 1]
+    raise ArgumentError, "No repository key found in URI: #{uri}" unless repo_key
+    
+    # Everything after repo_key is the target path within the repository
+    target_path = path_parts[(artifactory_index + 2)..-1]&.join('/') || ''
+    
+    # Base endpoint includes everything up to and including /artifactory
+    artifactory_path = path_parts[0..artifactory_index].join('/')
+    the_port = uri.port != uri.default_port ? ":#{uri.port}" : ""
+    base_endpoint = "#{uri.scheme}://#{uri.host}#{the_port}/#{artifactory_path}"
+    
+    { repo_key:, base_endpoint:, target_path: }
+  end
 
   # Collect metadata for file upload, using fig. prefix instead of upload. prefix
   def collect_upload_metadata(local_file, target_path, uri)
