@@ -337,7 +337,7 @@ class Fig::Protocol::Artifactory
   # Get all entries from Artifactory browser API with pagination support
   # Returns array of all entries, handling continueState pagination
   def get_all_artifactory_entries(base_url, client)
-    record_num = ENV['FIG_ARTIFACTORY_PAGESIZE']&.to_i || 3000
+    record_num = ENV['FIG_ARTIFACTORY_PAGESIZE']&.to_i || 20000
     
     Fig::Logging.debug(">> getting art initial #{record_num} entries from #{base_url}...")
 
