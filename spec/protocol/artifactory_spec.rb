@@ -378,6 +378,150 @@ describe Fig::Protocol::Artifactory do
     end
   end
 
+  describe '#parse_uri' do
+    let(:artifactory) { Fig::Protocol::Artifactory.new }
+
+    context 'with basic artifactory URI' do
+      it 'parses repository-level URI correctly' do
+        art_uri = URI('art://artifacts.example.com/artifactory/repo-name/')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('repo-name')
+        expect(result[:base_endpoint]).to eq('https://artifacts.example.com/artifactory')
+        expect(result[:target_path]).to eq('')
+      end
+
+      it 'parses URI with file path correctly' do
+        art_uri = URI('artifactory://artifacts.example.com/artifactory/repo-name/package/version/file.tar.gz')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('repo-name')
+        expect(result[:base_endpoint]).to eq('https://artifacts.example.com/artifactory')
+        expect(result[:target_path]).to eq('package/version/file.tar.gz')
+      end
+
+      it 'parses URI with nested directory path correctly' do
+        art_uri = URI('art://artifacts.example.com/artifactory/my-repo/com/example/package/1.0.0/package-1.0.0.jar')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('my-repo')
+        expect(result[:base_endpoint]).to eq('https://artifacts.example.com/artifactory')
+        expect(result[:target_path]).to eq('com/example/package/1.0.0/package-1.0.0.jar')
+      end
+    end
+
+    context 'with custom port' do
+      it 'includes port in base_endpoint when non-standard' do
+        art_uri = URI('artifactory://artifacts.example.com:8080/artifactory/repo-name/file.txt')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('repo-name')
+        expect(result[:base_endpoint]).to eq('https://artifacts.example.com:8080/artifactory')
+        expect(result[:target_path]).to eq('file.txt')
+      end
+
+      it 'excludes default HTTPS port from base_endpoint' do
+        art_uri = URI('art://artifacts.example.com:443/artifactory/repo-name/file.txt')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('repo-name')
+        expect(result[:base_endpoint]).to eq('https://artifacts.example.com/artifactory')
+        expect(result[:target_path]).to eq('file.txt')
+      end
+    end
+
+    context 'with artifactory in different path positions' do
+      it 'handles artifactory in root path' do
+        art_uri = URI('art://artifacts.example.com/artifactory/repo-name/file.txt')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('repo-name')
+        expect(result[:base_endpoint]).to eq('https://artifacts.example.com/artifactory')
+        expect(result[:target_path]).to eq('file.txt')
+      end
+
+      it 'handles artifactory in nested path' do
+        art_uri = URI('artifactory://artifacts.example.com/some/path/artifactory/repo-name/file.txt')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('repo-name')
+        expect(result[:base_endpoint]).to eq('https://artifacts.example.com/some/path/artifactory')
+        expect(result[:target_path]).to eq('file.txt')
+      end
+    end
+
+    context 'with trailing slashes' do
+      it 'handles URI with trailing slash' do
+        art_uri = URI('art://artifacts.example.com/artifactory/repo-name/')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('repo-name')
+        expect(result[:base_endpoint]).to eq('https://artifacts.example.com/artifactory')
+        expect(result[:target_path]).to eq('')
+      end
+
+      it 'handles URI without trailing slash' do
+        art_uri = URI('artifactory://artifacts.example.com/artifactory/repo-name')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('repo-name')
+        expect(result[:base_endpoint]).to eq('https://artifacts.example.com/artifactory')
+        expect(result[:target_path]).to eq('')
+      end
+    end
+
+    context 'error cases' do
+      it 'raises ArgumentError when artifactory is not in path' do
+        art_uri = URI('art://artifacts.example.com/some/other/path/repo-name/')
+        
+        expect {
+          artifactory.send(:parse_uri, art_uri)
+        }.to raise_error(ArgumentError, /URI must contain 'artifactory' in path/)
+      end
+
+      it 'raises ArgumentError when no repository key is found' do
+        art_uri = URI('artifactory://artifacts.example.com/artifactory/')
+        
+        expect {
+          artifactory.send(:parse_uri, art_uri)
+        }.to raise_error(ArgumentError, /No repository key found in URI/)
+      end
+
+      it 'raises ArgumentError when artifactory is at end of path' do
+        art_uri = URI('art://artifacts.example.com/some/path/artifactory')
+        
+        expect {
+          artifactory.send(:parse_uri, art_uri)
+        }.to raise_error(ArgumentError, /No repository key found in URI/)
+      end
+    end
+
+    context 'edge cases' do
+      it 'handles empty target path correctly' do
+        art_uri = URI('artifactory://artifacts.example.com/artifactory/repo-name')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:target_path]).to eq('')
+      end
+
+      it 'handles single character repo key' do
+        art_uri = URI('art://artifacts.example.com/artifactory/r/file.txt')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('r')
+        expect(result[:target_path]).to eq('file.txt')
+      end
+
+      it 'handles repo key with special characters' do
+        art_uri = URI('artifactory://artifacts.example.com/artifactory/repo-name-with-dashes_and_underscores/file.txt')
+        result = artifactory.send(:parse_uri, art_uri)
+        
+        expect(result[:repo_key]).to eq('repo-name-with-dashes_and_underscores')
+        expect(result[:target_path]).to eq('file.txt')
+      end
+    end
+  end
+
   describe '#upload' do
     let(:local_file) { '/tmp/test.txt' }
     let(:uri) { URI('https://artifacts.example.com/artifactory/repo-name/path/to/file.txt') }
