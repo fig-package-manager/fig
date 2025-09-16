@@ -351,8 +351,8 @@ class Fig::Protocol::Artifactory
       
       # Check if there are more entries to fetch
       continue_state = response['continueState']
-      return entries if continue_state.nil? || continue_state == -1
       Fig::Logging.debug(">> continue_state is #{continue_state}...")
+      return entries if continue_state.nil? || continue_state.to_i < 0
       
       # Use continueState as the recordNum for the next request
       record_num = continue_state
