@@ -143,8 +143,10 @@ class Fig::Protocol::Artifactory
     return package_versions.sort
   end
 
-  def download(uri, path, prompt_for_login)
-    Fig::Logging.info("Downloading from artifactory: #{uri}")
+  def download(art_uri, path, prompt_for_login)
+    Fig::Logging.info("Downloading from artifactory: #{art_uri}")
+
+    uri = httpify_uri(art_uri)
 
     # Log equivalent curl command for debugging
     authentication = get_authentication_for(uri.host, prompt_for_login)
@@ -257,7 +259,23 @@ class Fig::Protocol::Artifactory
 
   private
 
-  def parse_uri(uri)
+  def httpify_uri(art_uri)
+    # if we got into the artifactory protocol, we get to assume that the URI
+    # is related to artifactory, which also means we can be assured that the
+    # only scheme that will work is 'https' rather than the faux scheme used
+    # to signal that the URL is artifactory protocol.
+
+    # this is kind of weird b/c `art_uri` will likely be URI::Generic and
+    # everything downstream of here is going to want the type for the URL to
+    # be URI::HTTPS. So, we hack the scheme for the input to `https` then
+    # parse that string to form the https-based URI with the correct type.
+    art_uri.scheme = 'https'
+    URI(art_uri.to_s)
+  end
+
+  def parse_uri(art_uri)
+    uri = httpify_uri(art_uri)
+
     uri_path = uri.path.chomp('/')
     path_parts = uri_path.split('/').reject(&:empty?)
     
