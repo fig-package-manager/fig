@@ -339,6 +339,8 @@ class Fig::Protocol::Artifactory
   def get_all_artifactory_entries(base_url, client)
     record_num = ENV['FIG_ARTIFACTORY_PAGESIZE']&.to_i || 3000
     
+    Fig::Logging.debug(">> getting art initial #{record_num} entries from #{base_url}...")
+
     loop do
       # Build URL with recordNum parameter
       url = URI(base_url.to_s)
@@ -350,6 +352,7 @@ class Fig::Protocol::Artifactory
       # Check if there are more entries to fetch
       continue_state = response['continueState']
       return entries if continue_state.nil? || continue_state == -1
+      Fig::Logging.debug(">> continue_state is #{continue_state}...")
       
       # Use continueState as the recordNum for the next request
       record_num = continue_state
