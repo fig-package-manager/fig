@@ -116,7 +116,7 @@ describe Fig::Protocol::Artifactory do
   end
 
   describe '#download_list' do
-    let(:uri) { URI('https://artifacts.example.com/artifactory/repo-name/') }
+    let(:uri) { URI('art://artifacts.example.com/artifactory/repo-name/') }
     let(:artifactory) { Fig::Protocol::Artifactory.new }
     let(:mock_client) { double('Artifactory::Client') }
 
@@ -260,7 +260,8 @@ describe Fig::Protocol::Artifactory do
   end
 
   describe '#download' do
-    let(:uri) { URI('https://artifacts.example.com/artifactory/repo-name/package/version/file.tar.gz') }
+    let(:uri) { URI('artifactory://artifacts.example.com/artifactory/repo-name/package/version/file.tar.gz') }
+    let(:https_uri) { URI(uri.to_s.sub(/\Aartifactory:/, 'https:')) }
     let(:path) { '/tmp/test_file.tar.gz' }
     let(:prompt_for_login) { false }
     let(:mock_file) { double('File') }
@@ -274,9 +275,9 @@ describe Fig::Protocol::Artifactory do
     context 'with authentication' do
       it 'downloads file and logs curl equivalent with auth' do
         allow(artifactory).to receive(:get_authentication_for).with(uri.host, prompt_for_login).and_return(mock_auth)
-        allow(artifactory).to receive(:download_via_http_get).with(uri.to_s, mock_file)
+        allow(artifactory).to receive(:download_via_http_get).with(https_uri.to_s, mock_file)
 
-        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -u testuser:*** -o '#{path}' '#{uri}'")
+        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -u testuser:*** -o '#{path}' '#{https_uri}'")
 
         result = artifactory.download(uri, path, prompt_for_login)
         expect(result).to be true
@@ -286,9 +287,9 @@ describe Fig::Protocol::Artifactory do
     context 'without authentication' do
       it 'downloads file and logs curl equivalent without auth' do
         allow(artifactory).to receive(:get_authentication_for).with(uri.host, prompt_for_login).and_return(nil)
-        allow(artifactory).to receive(:download_via_http_get).with(uri.to_s, mock_file)
+        allow(artifactory).to receive(:download_via_http_get).with(https_uri.to_s, mock_file)
 
-        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{uri}'")
+        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{https_uri}'")
 
         result = artifactory.download(uri, path, prompt_for_login)
         expect(result).to be true
@@ -301,7 +302,7 @@ describe Fig::Protocol::Artifactory do
         system_error = SystemCallError.new('Connection failed')
         allow(artifactory).to receive(:download_via_http_get).and_raise(system_error)
 
-        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{uri}'")
+        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{https_uri}'")
         expect(Fig::Logging).to receive(:debug).with('unknown error - Connection failed')
         expect { artifactory.download(uri, path, prompt_for_login) }.to raise_error(Fig::FileNotFoundError, 'unknown error - Connection failed')
       end
@@ -313,7 +314,7 @@ describe Fig::Protocol::Artifactory do
         socket_error = SocketError.new('Host not found')
         allow(artifactory).to receive(:download_via_http_get).and_raise(socket_error)
 
-        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{uri}'")
+        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{https_uri}'")
         expect(Fig::Logging).to receive(:debug).with('Host not found')
         expect { artifactory.download(uri, path, prompt_for_login) }.to raise_error(Fig::FileNotFoundError, 'Host not found')
       end
@@ -327,6 +328,53 @@ describe Fig::Protocol::Artifactory do
       expect(mock_file).to receive(:binmode)
 
       artifactory.download(uri, path, prompt_for_login)
+    end
+  end
+
+  describe '#httpify_uri' do
+    let(:artifactory) { Fig::Protocol::Artifactory.new }
+
+    it 'converts art:// scheme to https://' do
+      art_uri = URI('art://artifacts.example.com/artifactory/repo-name/')
+      result = artifactory.send(:httpify_uri, art_uri)
+      
+      expect(result.scheme).to eq('https')
+      expect(result.host).to eq('artifacts.example.com')
+      expect(result.path).to eq('/artifactory/repo-name/')
+      expect(result).to be_a(URI::HTTPS)
+    end
+
+    it 'converts artifactory:// scheme to https://' do
+      art_uri = URI('artifactory://artifacts.example.com/artifactory/repo-name/package/version/file.tar.gz')
+      result = artifactory.send(:httpify_uri, art_uri)
+      
+      expect(result.scheme).to eq('https')
+      expect(result.host).to eq('artifacts.example.com')
+      expect(result.path).to eq('/artifactory/repo-name/package/version/file.tar.gz')
+      expect(result).to be_a(URI::HTTPS)
+    end
+
+    it 'preserves port and query parameters' do
+      art_uri = URI('art://artifacts.example.com:8080/artifactory/repo-name/?param=value')
+      result = artifactory.send(:httpify_uri, art_uri)
+      
+      expect(result.scheme).to eq('https')
+      expect(result.host).to eq('artifacts.example.com')
+      expect(result.port).to eq(8080)
+      expect(result.path).to eq('/artifactory/repo-name/')
+      expect(result.query).to eq('param=value')
+      expect(result).to be_a(URI::HTTPS)
+    end
+
+    it 'handles URIs with userinfo' do
+      art_uri = URI('artifactory://user:pass@artifacts.example.com/artifactory/repo-name/')
+      result = artifactory.send(:httpify_uri, art_uri)
+      
+      expect(result.scheme).to eq('https')
+      expect(result.userinfo).to eq('user:pass')
+      expect(result.host).to eq('artifacts.example.com')
+      expect(result.path).to eq('/artifactory/repo-name/')
+      expect(result).to be_a(URI::HTTPS)
     end
   end
 
