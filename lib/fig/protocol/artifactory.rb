@@ -81,6 +81,9 @@ class Fig::Protocol::Artifactory
   # Artifactory browser API endpoint (undocumented API)
   BROWSER_API_PATH = 'ui/api/v1/ui/v2/nativeBrowser/'
 
+  # Default number of list entries to fetch on initial iteration
+  INITIAL_LIST_FETCH_SIZE = 20000
+
   def initialize()
     initialize_netrc
   end
@@ -337,7 +340,7 @@ class Fig::Protocol::Artifactory
   # Get all entries from Artifactory browser API with pagination support
   # Returns array of all entries, handling continueState pagination
   def get_all_artifactory_entries(base_url, client)
-    record_num = ENV['FIG_ARTIFACTORY_PAGESIZE']&.to_i || 20000
+    record_num = ENV['FIG_ARTIFACTORY_PAGESIZE']&.to_i || INITIAL_LIST_FETCH_SIZE
     
     Fig::Logging.debug(">> getting art initial #{record_num} entries from #{base_url}...")
 
