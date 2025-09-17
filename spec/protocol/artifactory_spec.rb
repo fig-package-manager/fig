@@ -531,7 +531,12 @@ describe Fig::Protocol::Artifactory do
 
     before do
       allow(artifactory).to receive(:get_authentication_for).and_return(mock_authentication)
-      allow(::Artifactory::Client).to receive(:new).and_return(mock_client)
+      # Mock the global configuration - create a config double that responds to all setters
+      config_mock = double('config')
+      allow(config_mock).to receive(:endpoint=)
+      allow(config_mock).to receive(:username=)
+      allow(config_mock).to receive(:password=)
+      allow(::Artifactory).to receive(:configure).and_yield(config_mock)
       allow(::Artifactory::Resource::Artifact).to receive(:new).and_return(mock_artifact)
       allow(::File).to receive(:stat).and_return(double('stat', size: 1024, mtime: Time.now))
       allow(Digest::SHA1).to receive(:file).and_return(double(hexdigest: 'sha1hash'))
@@ -539,17 +544,16 @@ describe Fig::Protocol::Artifactory do
     end
 
     it 'parses URI correctly and uploads file' do
-      expect(::Artifactory::Client).to receive(:new).with({
-        endpoint: 'https://artifacts.example.com/artifactory',
-        username: 'testuser',
-        password: 'testpass'
-      })
+      config_mock = double('config')
+      expect(::Artifactory).to receive(:configure).and_yield(config_mock)
+      expect(config_mock).to receive(:endpoint=).with('https://artifacts.example.com/artifactory')
+      expect(config_mock).to receive(:username=).with('testuser')
+      expect(config_mock).to receive(:password=).with('testpass')
       
       expect(mock_artifact).to receive(:upload).with(
         'repo-name',
         'path/to/file.txt',
-        hash_including('fig.original_path' => local_file),
-        client: mock_client
+        hash_including('fig.original_path' => local_file)
       )
 
       artifactory.upload(local_file, uri)
@@ -578,7 +582,7 @@ describe Fig::Protocol::Artifactory do
 
     it 'collects metadata with fig. prefix' do
       metadata_hash = nil
-      allow(mock_artifact).to receive(:upload) do |repo, path, metadata, options|
+      allow(mock_artifact).to receive(:upload) do |repo, path, metadata|
         metadata_hash = metadata
       end
 
