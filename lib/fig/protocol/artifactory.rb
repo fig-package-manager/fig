@@ -15,64 +15,6 @@ require 'artifactory'
 module Fig; end
 module Fig::Protocol; end
 
-class Fig::ArtifactoryClient
-  attr_reader :upload_url, :download_url
-
-  @upload_url = ''
-  @download_url = ''
-  @creds = ''
-
-  def initialize(options = {})
-  end
-
-  def upload_directory(local_path)
-  end
-
-  def download_package()
-  end
-
-  def discover_remote_files(remote_path)
-    begin
-      # Use artifactory gem to browse the repository - search for files in the specific path
-      # Instead of wildcard search, search for files that match the remote path pattern
-      search_pattern = "#{remote_path}/*"
-      puts "  Searching for pattern: #{search_pattern}" if @verbose
-      puts "  In repository: #{@download_repo_key}" if @verbose
-      
-      top_host = @base_endpoint.split('/')
-      browser_endpoint = URI.join(@base_endpoint, '/ui/api/v1/ui/v2/nativeBrowser/')
-      
-      list_url = URI.join(browser_endpoint, "#{@download_repo_key}/", remote_path)
-      # Show equivalent curl command for search
-      if @verbose
-        auth_header = @credentials ? "-u #{@credentials.split(':').first}:***" : ""
-        puts "  Equivalent curl: curl #{auth_header} '#{list_url}'"
-      end
-
-      r = Artifactory.get(list_url)
-      artifacts = r['data']
-      
-      puts "  Initial search found #{artifacts.size} artifacts" if @verbose
-      
-      artifacts.each do |artifact|
-        relative_path = [ remote_path, artifact['name'] ].join('/')
-        
-        files << {
-          remote_path: relative_path,
-          relative_path: artifact['name'],
-          size: artifact['size'] || 0
-        }
-        
-        puts "  Found remote: #{relative_path} (#{format_size(artifact.size || 0)})" if @verbose
-      end
-    rescue => e
-      puts "Warning: Could not browse remote repository: #{e.message}" if @verbose
-      puts "Assuming empty repository for dry-run purposes" if @verbose
-    end
-    
-    files
-  end
-end
 
 # file transfers/storage using https as the transport and artifactory as the backing store
 class Fig::Protocol::Artifactory
@@ -85,7 +27,7 @@ class Fig::Protocol::Artifactory
   # Default number of list entries to fetch on initial iteration
   INITIAL_LIST_FETCH_SIZE = 20000
 
-  def initialize()
+  def initialize
     initialize_netrc
   end
 
