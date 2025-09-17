@@ -110,14 +110,17 @@ class Fig::Protocol::Artifactory
     begin
       parse_uri(uri) => { repo_key:, base_endpoint:, target_path: }
 
-      # Create Artifactory client instance
+      # Configure Artifactory gem globally - unlike other methods that can use client instances,
+      # the artifact.upload() method ignores the client: parameter and only uses global config.
+      # This is a limitation of the artifactory gem's upload implementation.
       authentication = get_authentication_for(uri.host, :prompt_for_login)
-      client_config = { endpoint: base_endpoint }
-      if authentication
-        client_config[:username] = authentication.username
-        client_config[:password] = authentication.password
+      ::Artifactory.configure do |config|
+        config.endpoint = base_endpoint
+        if authentication
+          config.username = authentication.username
+          config.password = authentication.password
+        end
       end
-      client = ::Artifactory::Client.new(client_config)
 
       # Log equivalent curl command for debugging
       if authentication
@@ -131,9 +134,9 @@ class Fig::Protocol::Artifactory
       
       # Collect metadata for upload
       metadata = collect_upload_metadata(local_file, target_path, uri)
-      
-      # Upload with metadata
-      artifact.upload(repo_key, target_path, metadata, client: client)
+
+      # Upload with metadata (no client parameter needed - uses global config)
+      artifact.upload(repo_key, target_path, metadata)
       
       Fig::Logging.info("Successfully uploaded #{local_file} to #{uri}")
       
