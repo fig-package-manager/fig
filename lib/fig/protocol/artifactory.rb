@@ -3,6 +3,12 @@
 require 'net/http'
 require 'uri'
 require 'etc'
+require 'thread'
+require 'socket'
+require 'digest'
+require 'time'
+
+require 'artifactory'
 
 require 'fig/logging'
 require 'fig/network_error'
@@ -10,7 +16,6 @@ require 'fig/package_descriptor'
 require 'fig/protocol'
 require 'fig/protocol/netrc_enabled'
 
-require 'artifactory'
 
 module Fig; end
 module Fig::Protocol; end
@@ -233,10 +238,6 @@ class Fig::Protocol::Artifactory
 
   # Collect metadata for file upload, using fig. prefix instead of upload. prefix
   def collect_upload_metadata(local_file, target_path, uri)
-    require 'socket'
-    require 'digest'
-    require 'time'
-    
     file_stat = ::File.stat(local_file)
     
     metadata = {
@@ -271,8 +272,6 @@ class Fig::Protocol::Artifactory
   # Fetch version lists for packages concurrently for major performance improvement
   # Reduces ~2700 sequential API calls to concurrent batches
   def fetch_versions_concurrently(valid_packages, base_endpoint, repo_key, client_config)
-    require 'thread'
-    
     # Scale thread count based on CPU cores, with reasonable bounds
     # Testing showed ~25 threads optimal for most servers, so use 3x CPU cores as default
     default_threads = [Etc.nprocessors * 3, 50].min  # cap at 50 to avoid overwhelming servers
