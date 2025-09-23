@@ -1,9 +1,8 @@
 name: tebako
 
 on:
-  push:
-    paths-ignore:
-      - 'doc/**'
+  schedule:
+    - cron: "0 1 * * 0"
   workflow_dispatch:
 
 # Ensure we don't run duplicate workflows

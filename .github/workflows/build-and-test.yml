@@ -9,15 +9,6 @@ on:
   # Note: We combine branch and tag triggers to prevent double-execution
   # when pushing to a branch with an open PR
   push:
-    branches: [ "*" ]
-    tags: [ "v*" ]
-    paths-ignore:
-      - 'doc/**'
-  # Only trigger specific PR events to avoid redundant runs
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches:
-      - master
     paths-ignore:
       - 'doc/**'
   # Allow manual trigger for debugging and one-off runs

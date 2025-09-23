@@ -20,6 +20,7 @@ require 'fig/protocol/ftp'
 require 'fig/protocol/http'
 require 'fig/protocol/sftp'
 require 'fig/protocol/ssh'
+require 'fig/protocol/artifactory'
 require 'fig/repository_error'
 require 'fig/url'
 require 'fig/user_input_error'
@@ -83,8 +84,10 @@ class Fig::OperatingSystem
     @protocols['file'] = Fig::Protocol::File.new
     @protocols['ftp']  = Fig::Protocol::FTP.new login
     @protocols['http'] = Fig::Protocol::HTTP.new
+    @protocols['https'] = Fig::Protocol::HTTP.new
     @protocols['sftp'] = Fig::Protocol::SFTP.new
     @protocols['ssh']  = Fig::Protocol::SSH.new
+    @protocols['art'] = @protocols['artifactory'] = Fig::Protocol::Artifactory.new
   end
 
   def list(dir)

@@ -28,7 +28,7 @@ RUN perl -e 'use List::Util qw(pairs)' || cpan List::Util || cpan List::Util
 
 # install asdf for ruby version management
 ADD https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-amd64.tar.gz /tmp/asdf.tgz
-RUN cd /usr/local/bin && tar xzf /tmp/asdf.tgz
+RUN cd /usr/local/bin && tar xzf /tmp/asdf.tgz && rm -f /tmp/asdf.tgz
 ENV ASDF_DATA_DIR=/opt/asdf
 ENV PATH="${ASDF_DATA_DIR}/bin:${ASDF_DATA_DIR}/shims:${PATH}"
 
@@ -40,8 +40,9 @@ ARG DEFAULT_RUBY="3.3.7"
 RUN asdf plugin add ruby && \
     for version in $RUBY_VERSIONS; do \
       asdf install ruby $version; \
-    done
-RUN asdf set -u ruby $DEFAULT_RUBY
+    done && \
+    rm -f /tmp/ruby-build.* && \
+    asdf set -u ruby $DEFAULT_RUBY
 
 # profile.d scripts for interactive shells
 RUN echo "PATH=${ASDF_DATA_DIR}/shims:${ASDF_DATA_DIR}/bin:\$PATH" >> /etc/profile.d/asdf.sh

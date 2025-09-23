@@ -4,7 +4,7 @@ FROM rockylinux:9
 RUN yum install --enablerepo=devel -y git @Development perl-IPC-Cmd zlib-devel libffi-devel libyaml-devel perl-FindBin perl-Pod-Html && yum clean all
 
 ADD https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-amd64.tar.gz /tmp/asdf.tgz
-RUN cd /usr/local/bin && tar xzf /tmp/asdf.tgz
+RUN cd /usr/local/bin && tar xzf /tmp/asdf.tgz && rm -f /tmp/asdf.tgz
 ENV ASDF_DATA_DIR=/opt/asdf
 RUN echo "PATH=$ASDF_DATA_DIR/shims:\$PATH" >> /etc/profile.d/asdf.sh && . /etc/profile.d/asdf.sh
 RUN asdf plugin add ruby
@@ -17,6 +17,7 @@ ARG DEFAULT_RUBY="3.3.7"
 RUN for version in $RUBY_VERSIONS; do \
       asdf install ruby $version; \
     done && \
+    rm -f /tmp/ruby-build.* && \
     asdf set -u ruby $DEFAULT_RUBY
 
 # Install cmake
