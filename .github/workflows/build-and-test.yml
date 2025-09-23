@@ -184,12 +184,15 @@ jobs:
     permissions:
       contents: write  # needed for creating releases
       packages: write
+      id-token: write
     environment:
       name: rubygems
       url: https://rubygems.org/gems/fig
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Download gem artifact
         uses: actions/download-artifact@v4
@@ -220,15 +223,7 @@ jobs:
           rubygems: '3.6.1'
 
       - name: Publish to RubyGems
-        env:
-          # Using environment secrets for better security
-          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
-        run: |
-          mkdir -p $HOME/.gem
-          echo -e "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}" > $HOME/.gem/credentials
-          chmod 0600 $HOME/.gem/credentials
-          gem push pkg/*.gem
-          rm -f $HOME/.gem/credentials
+        uses: rubygems/release-gem@v1
           
   # figure out which docker image tag to use for various CI images
   compute-img-tag:
