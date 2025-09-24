@@ -244,6 +244,7 @@ jobs:
         with:
           files: pkg/*.gem
           name: Release v${{ steps.gem-version.outputs.version }}
+          tag_name: v${{ needs.auto-tag.outputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: true
