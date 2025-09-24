@@ -5,9 +5,8 @@
 name: build-and-test
 
 on:
-  # Trigger on pushes to branches and version tags
-  # Note: We combine branch and tag triggers to prevent double-execution
-  # when pushing to a branch with an open PR
+  # Trigger on pushes to branches
+  # Note: Tag creation happens within the workflow via auto-tag job
   push:
     paths-ignore:
       - 'doc/**'
@@ -29,6 +28,62 @@ env:
   CI_DEFAULT_RUBY: "3.3.7"         # Version used by default
 
 jobs:
+  # Auto-tag when version.rb changes on master
+  # 
+  # HOW TO TRIGGER A RELEASE:
+  # 1. Edit lib/fig/version.rb and change the VERSION string (e.g., '2.0.0-alpha.6' → '2.0.0-alpha.7')
+  # 2. Commit and push to master branch
+  # 3. This job will automatically create a git tag (e.g., v2.0.0-alpha.7)
+  # 4. The 'publish' job will then run and publish the gem to RubyGems
+  #
+  # FUTURE IMPROVEMENT:
+  # This manual process could be automated using conventional commits and release-please.
+  # See: https://github.com/googleapis/release-please#how-release-please-works
+  # With conventional commits, you'd use commit messages like:
+  #   - "feat: add new feature" (minor version bump)
+  #   - "fix: resolve bug" (patch version bump)  
+  #   - "feat!: breaking change" (major version bump)
+  # And release-please would automatically create PRs with version bumps.
+  auto-tag:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    outputs:
+      version_changed: ${{ steps.changes.outputs.version }}
+      new_version: ${{ steps.extract.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for version.rb changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            version:
+              - 'lib/fig/version.rb'
+      
+      - name: Set up Ruby
+        if: steps.changes.outputs.version == 'true'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3.7'
+          
+      - name: Extract version and create tag
+        if: steps.changes.outputs.version == 'true'
+        id: extract
+        run: |
+          VERSION=$(ruby -r ./lib/fig/version -e 'puts Fig::VERSION')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version found: $VERSION"
+          
+      - name: Create tag
+        if: steps.changes.outputs.version == 'true'
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: v${{ steps.extract.outputs.version }}
+          tag_prefix: ""
+          create_annotated_tag: true
+
   # Find all image directories dynamically
   find-image-dirs:
     runs-on: ubuntu-latest
@@ -154,32 +209,9 @@ jobs:
           name: fig
           path: pkg/fig-*.gem
 
-  verify-version:
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Verify version matches tag
-        run: |
-          # Extract version from version.rb
-          EMBEDDED_VERSION=$(grep -o "VERSION = '.*'" lib/fig/version.rb | cut -d"'" -f2)
-          # Extract version from git tag (remove 'v' prefix)
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
-          
-          echo "Version in version.rb: $EMBEDDED_VERSION"
-          echo "Version from git tag: $TAG_VERSION"
-          
-          if [ "$EMBEDDED_VERSION" != "$TAG_VERSION" ]; then
-            echo "::error::Version mismatch! version.rb ($EMBEDDED_VERSION) does not match git tag ($TAG_VERSION)"
-            exit 1
-          fi
-
   publish:
-    needs: [package, verify-version]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [package, auto-tag]
+    if: needs.auto-tag.outputs.version_changed == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write  # needed for creating releases
