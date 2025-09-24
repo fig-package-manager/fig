@@ -256,8 +256,14 @@ jobs:
           bundler: '2.6.1'
           rubygems: '3.6.1'
 
+      - name: Configure RubyGems credentials  
+        uses: rubygems/configure-rubygems-credentials@v1.0.0
+        with:
+          gem-server: https://rubygems.org
+          audience: rubygems.org
+
       - name: Publish to RubyGems
-        uses: rubygems/release-gem@v1
+        run: gem push pkg/*.gem
           
   # figure out which docker image tag to use for various CI images
   compute-img-tag:
