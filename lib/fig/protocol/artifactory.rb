@@ -177,7 +177,9 @@ class Fig::Protocol::Artifactory
       response = client.get(storage_url)
       
       # compare sizes first
-      if response['size'] != ::File.size(path)
+      remote_size = response['size'].to_i
+      if remote_size != ::File.size(path)
+        # TODO VERBOSE
         return false
       end
       
@@ -188,7 +190,8 @@ class Fig::Protocol::Artifactory
       if remote_mtime <= local_mtime
         return true
       end
-      
+
+      # TODO VERBOSE
       return false
     rescue => error
       Fig::Logging.debug "Error checking if #{path} is up to date: #{error.message}"
