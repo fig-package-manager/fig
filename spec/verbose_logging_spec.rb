@@ -93,100 +93,61 @@ describe 'Fig::VerboseLogging' do
     end
   end
 
-  describe '.log_dependency_resolution' do
-    it 'logs dependency resolution with proper indentation when verbose is enabled' do
+  describe '.verbose' do
+    it 'logs messages when verbose is enabled' do
       Fig::VerboseLogging.enable_verbose!
       allow(Fig::Logging).to receive(:info?).and_return(true)
       
-      Fig::VerboseLogging.log_dependency_resolution('mypackage', '1.0.0', 'default', 2)
+      Fig::VerboseLogging.verbose('test message')
       
       log_content = @log_output.string
-      expect(log_content).to include('[VERBOSE]     resolving dependency: mypackage/1.0.0:default')
+      expect(log_content).to include('[VERBOSE] test message')
     end
 
-    it 'skips logging for unnamed packages at root level' do
-      Fig::VerboseLogging.enable_verbose!
+    it 'logs messages when debug logging is enabled (even without verbose flag)' do
+      allow(Fig::Logging).to receive(:debug?).and_return(true)
       allow(Fig::Logging).to receive(:info?).and_return(true)
       
-      Fig::VerboseLogging.log_dependency_resolution(nil, nil, 'default', 0)
+      Fig::VerboseLogging.verbose('test message')
       
-      expect(@log_output.string).to be_empty
+      log_content = @log_output.string
+      expect(log_content).to include('[VERBOSE] test message')
     end
 
     it 'does not log when neither verbose nor debug is enabled' do
       allow(Fig::Logging).to receive(:debug?).and_return(false)
       allow(Fig::Logging).to receive(:info?).and_return(true)
       
-      Fig::VerboseLogging.log_dependency_resolution('mypackage', '1.0.0', 'default', 1)
+      Fig::VerboseLogging.verbose('test message')
       
       expect(@log_output.string).to be_empty
     end
-  end
 
-  describe '.log_repository_operation' do
-    it 'logs repository operations with details when verbose is enabled' do
+    it 'falls back to stderr when logging is disabled but verbose is enabled' do
       Fig::VerboseLogging.enable_verbose!
-      allow(Fig::Logging).to receive(:info?).and_return(true)
+      allow(Fig::Logging).to receive(:info?).and_return(false)
       
-      Fig::VerboseLogging.log_repository_operation('download', 'http://example.com/repo', '5 packages')
+      Fig::VerboseLogging.verbose('test message')
       
-      log_content = @log_output.string
-      expect(log_content).to include('[VERBOSE] repository download: http://example.com/repo (5 packages)')
+      stderr_content = @stderr_output.string
+      expect(stderr_content).to include('[VERBOSE] test message')
     end
   end
 
-  describe '.log_asset_operation' do
-    it 'logs asset operations with size formatting when verbose is enabled' do
+  describe '.should_log_verbose?' do
+    it 'returns true when verbose is enabled' do
       Fig::VerboseLogging.enable_verbose!
-      allow(Fig::Logging).to receive(:info?).and_return(true)
-      
-      Fig::VerboseLogging.log_asset_operation('downloading', '/path/to/file.tar.gz', 1536)
-      
-      log_content = @log_output.string
-      expect(log_content).to include('[VERBOSE] asset downloading: /path/to/file.tar.gz (1.5KB)')
-    end
-  end
-
-  describe '.log_override_applied' do
-    it 'logs override applications with proper indentation when verbose is enabled' do
-      Fig::VerboseLogging.enable_verbose!
-      allow(Fig::Logging).to receive(:info?).and_return(true)
-      
-      Fig::VerboseLogging.log_override_applied('mypackage', '1.0.0', '2.0.0', 1)
-      
-      log_content = @log_output.string
-      expect(log_content).to include('[VERBOSE]   override applied: mypackage/1.0.0 -> mypackage/2.0.0')
+      expect(Fig::VerboseLogging.should_log_verbose?).to be true
     end
 
-    it 'does not log when neither verbose nor debug is enabled' do
+    it 'returns true when debug logging is enabled' do
+      allow(Fig::Logging).to receive(:debug?).and_return(true)
+      expect(Fig::VerboseLogging.should_log_verbose?).to be true
+    end
+
+    it 'returns false when neither verbose nor debug is enabled' do
       allow(Fig::Logging).to receive(:debug?).and_return(false)
-      allow(Fig::Logging).to receive(:info?).and_return(true)
-      
-      Fig::VerboseLogging.log_override_applied('mypackage', '1.0.0', '2.0.0', 0)
-      
-      expect(@log_output.string).to be_empty
-    end
-  end
-
-  describe '.log_config_processing' do
-    it 'logs config processing for named packages when verbose is enabled' do
-      Fig::VerboseLogging.enable_verbose!
-      allow(Fig::Logging).to receive(:info?).and_return(true)
-      
-      Fig::VerboseLogging.log_config_processing('mypackage', '1.0.0', 'default')
-      
-      log_content = @log_output.string
-      expect(log_content).to include('[VERBOSE] processing config default for package mypackage/1.0.0')
-    end
-
-    it 'logs config processing for command-line packages when verbose is enabled' do
-      Fig::VerboseLogging.enable_verbose!
-      allow(Fig::Logging).to receive(:info?).and_return(true)
-      
-      Fig::VerboseLogging.log_config_processing(nil, nil, 'default')
-      
-      log_content = @log_output.string
-      expect(log_content).to include('[VERBOSE] processing config default for command-line package')
+      expect(Fig::VerboseLogging.should_log_verbose?).to be false
     end
   end
 
