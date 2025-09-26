@@ -95,9 +95,7 @@ class Fig::RuntimeEnvironment
       return
     end
 
-    Fig::VerboseLogging.log_config_processing(
-      package.name, package.version, config_name
-    )
+    log_config_processing(package.name, package.version, config_name)
     Fig::Logging.debug(
       "Applying #{package.to_descriptive_string_with_config config_name}, package depth #{current_package_depth}."
     )
@@ -212,7 +210,7 @@ class Fig::RuntimeEnvironment
     package, resolved_descriptor, new_backtrace =
       determine_included_package starting_package, include_statement, backtrace, current_package_depth
 
-    Fig::VerboseLogging.log_package_include(resolved_descriptor, current_package_depth)
+    log_package_include(resolved_descriptor, current_package_depth)
 
     return if
           @suppress_includes == :cross_package \
@@ -256,7 +254,7 @@ class Fig::RuntimeEnvironment
     )
       override = backtrace.get_override(override_package_name)
       if override
-        Fig::VerboseLogging.log_override_applied(
+        log_override_applied(
           override_package_name, descriptor.version, override, current_package_depth
         )
         resolved_descriptor =
@@ -285,7 +283,6 @@ class Fig::RuntimeEnvironment
     including_package, include_file_statement, backtrace, current_package_depth
   )
     return if @suppress_includes.is_a? Symbol
-
     full_path = include_file_statement.full_path_relative_to including_package
 
     descriptor =
@@ -591,5 +588,41 @@ class Fig::RuntimeEnvironment
     raise Fig::RepositoryError.new(
         message + ( stacktrace.empty? ? '' : "\n#{stacktrace}" )
     )
+  end
+
+  private
+
+  def log_config_processing(package_name, version, config_name)
+    if package_name && !package_name.empty?
+      Fig::VerboseLogging.verbose "processing config #{config_name} for package #{package_name}/#{version || '<no version>'}"
+    else
+      Fig::VerboseLogging.verbose "processing config #{config_name} for command-line package"
+    end
+  end
+
+  def log_package_include(package_descriptor, depth)
+    # Skip logging for synthetic/unnamed packages at root level
+    if depth == 0 && package_descriptor.respond_to?(:name) && 
+       (package_descriptor.name.nil? || package_descriptor.name.empty?)
+      return
+    end
+    
+    indent = "  " * depth
+    if package_descriptor.respond_to?(:to_string)
+      descriptor_string = package_descriptor.to_string
+    elsif package_descriptor.respond_to?(:name) && package_descriptor.respond_to?(:version)
+      name = package_descriptor.name || "<unnamed>"
+      version = package_descriptor.version || "<no version>"
+      config = package_descriptor.config || "default"
+      descriptor_string = "#{name}/#{version}:#{config}"
+    else
+      descriptor_string = package_descriptor.to_s
+    end
+    Fig::VerboseLogging.verbose "#{indent}including package: #{descriptor_string}"
+  end
+
+  def log_override_applied(package_name, original_version, override_version, depth)
+    indent = "  " * depth
+    Fig::VerboseLogging.verbose "#{indent}override applied: #{package_name}/#{original_version} -> #{package_name}/#{override_version}"
   end
 end

@@ -105,7 +105,7 @@ class Fig::OperatingSystem
         protocol, uri = decode_protocol url
 
         result = protocol.download_list uri
-        Fig::VerboseLogging.log_repository_operation("listed", url, "#{result.size} entries")
+        log_repository_operation("listed", url, "#{result.size} entries")
         result
       rescue SocketError => error
         Fig::Logging.debug error.message
@@ -137,7 +137,7 @@ class Fig::OperatingSystem
       result = protocol.download uri, path, prompt_for_login
       if File.exist?(path)
         size = File.size(path)
-        Fig::VerboseLogging.log_asset_operation("downloaded", path, size)
+        log_asset_operation("downloaded", path, size)
       end
       result
     end
@@ -239,7 +239,7 @@ class Fig::OperatingSystem
     Fig::VerboseLogging.time_operation("extracting archive #{File.basename(archive_path)}") do
       FileUtils.mkdir_p directory
       archive_size = File.size(archive_path) if File.exist?(archive_path)
-      Fig::VerboseLogging.log_asset_operation("extracting", archive_path, archive_size)
+      log_asset_operation("extracting", archive_path, archive_size)
       
       Dir.chdir(directory) do
         if ! File.exist? archive_path
@@ -379,5 +379,33 @@ class Fig::OperatingSystem
     )
 
     return
+  end
+
+  private
+
+  def log_repository_operation(operation, url_or_path, details = nil)
+    message = "repository #{operation}: #{url_or_path}"
+    message += " (#{details})" if details
+    Fig::VerboseLogging.verbose message
+  end
+  
+  def log_asset_operation(operation, asset_path, size_bytes = nil)
+    message = "asset #{operation}: #{asset_path}"
+    message += " (#{format_bytes(size_bytes)})" if size_bytes
+    Fig::VerboseLogging.verbose message
+  end
+
+  def format_bytes(bytes)
+    return nil unless bytes
+    
+    if bytes < 1024
+      "#{bytes}B"
+    elsif bytes < 1024 * 1024
+      "#{(bytes / 1024.0).round(1)}KB"
+    elsif bytes < 1024 * 1024 * 1024
+      "#{(bytes / (1024.0 * 1024)).round(1)}MB"
+    else
+      "#{(bytes / (1024.0 * 1024 * 1024)).round(1)}GB"
+    end
   end
 end
