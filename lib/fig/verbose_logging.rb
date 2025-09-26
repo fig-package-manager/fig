@@ -66,18 +66,4 @@ module Fig::VerboseLogging
       "#{minutes}m #{remaining_seconds.round(1)}s"
     end
   end
-  
-  def self.format_bytes(bytes)
-    return "unknown size" unless bytes
-    
-    if bytes < 1024
-      "#{bytes}B"
-    elsif bytes < 1024 * 1024
-      "#{(bytes / 1024.0).round(1)}KB"
-    elsif bytes < 1024 * 1024 * 1024
-      "#{(bytes / (1024.0 * 1024)).round(1)}MB"
-    else
-      "#{(bytes / (1024.0 * 1024 * 1024)).round(1)}GB"
-    end
-  end
 end
