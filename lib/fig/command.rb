@@ -22,6 +22,7 @@ require 'fig/runtime_environment'
 require 'fig/statement/configuration'
 require 'fig/update_lock'
 require 'fig/user_input_error'
+require 'fig/verbose_logging'
 require 'fig/working_directory_maintainer'
 
 module Fig; end
@@ -46,6 +47,11 @@ class Fig::Command
     Fig::Logging.initialize_pre_configuration(
       @options.log_to_stdout(), @options.log_level(),
     )
+    
+    # Enable verbose logging if requested
+    if @options.verbose
+      Fig::VerboseLogging.enable_verbose!
+    end
 
     actions = @options.actions()
     if actions.empty?

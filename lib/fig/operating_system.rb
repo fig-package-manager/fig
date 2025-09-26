@@ -24,6 +24,7 @@ require 'fig/protocol/artifactory'
 require 'fig/repository_error'
 require 'fig/url'
 require 'fig/user_input_error'
+require 'fig/verbose_logging'
 
 module Fig; end
 
@@ -99,16 +100,20 @@ class Fig::OperatingSystem
   end
 
   def download_list(url)
-    begin
-      protocol, uri = decode_protocol url
+    Fig::VerboseLogging.time_operation("listing packages from #{url}") do
+      begin
+        protocol, uri = decode_protocol url
 
-      return protocol.download_list uri
-    rescue SocketError => error
-      Fig::Logging.debug error.message
-      raise Fig::NetworkError.new "#{url}: #{error.message}"
-    rescue Errno::ETIMEDOUT => error
-      Fig::Logging.debug error.message
-      raise Fig::NetworkError.new "#{url}: #{error.message}"
+        result = protocol.download_list uri
+        Fig::VerboseLogging.log_repository_operation("listed", url, "#{result.size} entries")
+        result
+      rescue SocketError => error
+        Fig::Logging.debug error.message
+        raise Fig::NetworkError.new "#{url}: #{error.message}"
+      rescue Errno::ETIMEDOUT => error
+        Fig::Logging.debug error.message
+        raise Fig::NetworkError.new "#{url}: #{error.message}"
+      end
     end
   end
 
@@ -124,11 +129,18 @@ class Fig::OperatingSystem
   # Returns whether the file was not downloaded because the file already
   # exists and is already up-to-date.
   def download(url, path, prompt_for_login)
-    protocol, uri = decode_protocol url
+    Fig::VerboseLogging.time_operation("downloading #{File.basename(url)}") do
+      protocol, uri = decode_protocol url
 
-    FileUtils.mkdir_p(File.dirname path)
+      FileUtils.mkdir_p(File.dirname path)
 
-    return protocol.download uri, path, prompt_for_login
+      result = protocol.download uri, path, prompt_for_login
+      if File.exist?(path)
+        size = File.size(path)
+        Fig::VerboseLogging.log_asset_operation("downloaded", path, size)
+      end
+      result
+    end
   end
 
   # Returns the basename and full path to the download.
@@ -224,32 +236,37 @@ class Fig::OperatingSystem
   # .tgz
   # .zip
   def unpack_archive(directory, archive_path)
-    FileUtils.mkdir_p directory
-    Dir.chdir(directory) do
-      if ! File.exist? archive_path
-        raise Fig::RepositoryError.new "#{archive_path} does not exist."
-      end
+    Fig::VerboseLogging.time_operation("extracting archive #{File.basename(archive_path)}") do
+      FileUtils.mkdir_p directory
+      archive_size = File.size(archive_path) if File.exist?(archive_path)
+      Fig::VerboseLogging.log_asset_operation("extracting", archive_path, archive_size)
+      
+      Dir.chdir(directory) do
+        if ! File.exist? archive_path
+          raise Fig::RepositoryError.new "#{archive_path} does not exist."
+        end
 
-      running_on_windows = Fig::OperatingSystem.windows?
-      ::Archive.read_open_filename(archive_path) do |reader|
-        while entry = reader.next_header
-          if running_on_windows
-            check_archive_entry_for_windows entry, archive_path
-          end
+        running_on_windows = Fig::OperatingSystem.windows?
+        ::Archive.read_open_filename(archive_path) do |reader|
+          while entry = reader.next_header
+            if running_on_windows
+              check_archive_entry_for_windows entry, archive_path
+            end
 
-          begin
-            reader.extract(entry)
-          rescue Archive::Error => exception
-            # Nice how the error message doesn't include any information about
-            # what was having the problem.
-            message = exception.message.sub(/^Extract archive failed: /, '')
-            new_exception =
-              Fig::RepositoryError.new(
-                "Could not extract #{entry.pathname} from #{archive_path}: #{message}"
-              )
+            begin
+              reader.extract(entry)
+            rescue Archive::Error => exception
+              # Nice how the error message doesn't include any information about
+              # what was having the problem.
+              message = exception.message.sub(/^Extract archive failed: /, '')
+              new_exception =
+                Fig::RepositoryError.new(
+                  "Could not extract #{entry.pathname} from #{archive_path}: #{message}"
+                )
 
-            new_exception.set_backtrace exception.backtrace
-            raise new_exception
+              new_exception.set_backtrace exception.backtrace
+              raise new_exception
+            end
           end
         end
       end

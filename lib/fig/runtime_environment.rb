@@ -15,6 +15,7 @@ require 'fig/statement/override'
 require 'fig/statement/path'
 require 'fig/statement/set'
 require 'fig/user_input_error'
+require 'fig/verbose_logging'
 
 module Fig; end
 
@@ -94,6 +95,9 @@ class Fig::RuntimeEnvironment
       return
     end
 
+    Fig::VerboseLogging.log_config_processing(
+      package.name, package.version, config_name
+    )
     Fig::Logging.debug(
       "Applying #{package.to_descriptive_string_with_config config_name}, package depth #{current_package_depth}."
     )
@@ -206,7 +210,9 @@ class Fig::RuntimeEnvironment
       include_statement.included_package.nil? && @suppress_includes == :all
 
     package, resolved_descriptor, new_backtrace =
-      determine_included_package starting_package, include_statement, backtrace
+      determine_included_package starting_package, include_statement, backtrace, current_package_depth
+
+    Fig::VerboseLogging.log_package_include(resolved_descriptor, current_package_depth)
 
     return if
           @suppress_includes == :cross_package \
@@ -222,16 +228,13 @@ class Fig::RuntimeEnvironment
     end
 
     apply_config(
-      package,
-      resolved_descriptor.config || Fig::Package::DEFAULT_CONFIG,
-      new_backtrace,
-      next_package_depth,
+      package, resolved_descriptor.config, new_backtrace, next_package_depth
     )
 
     return
   end
 
-  def determine_included_package(starting_package, include_statement, backtrace)
+  def determine_included_package(starting_package, include_statement, backtrace, current_package_depth = 0)
     descriptor = include_statement.descriptor
 
     if ! include_statement.included_package.nil?
@@ -250,6 +253,9 @@ class Fig::RuntimeEnvironment
     )
       override = backtrace.get_override(override_package_name)
       if override
+        Fig::VerboseLogging.log_override_applied(
+          override_package_name, descriptor.version, override, current_package_depth
+        )
         resolved_descriptor =
           Fig::PackageDescriptor.new(
             override_package_name, override, descriptor.config

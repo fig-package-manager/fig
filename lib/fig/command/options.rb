@@ -79,6 +79,7 @@ class Fig::Command::Options
   attr_reader   :suppress_retrieves
   attr_reader   :update_lock_response
   attr_reader   :variable_to_get
+  attr_reader   :verbose
   attr_accessor :version_message
   attr_accessor :version_plain
 
@@ -739,6 +740,13 @@ Running commands:
       "  (#{level_list})"
     ) do |log_level|
       @log_level = log_level
+    end
+
+    @parser.on(
+      '--verbose',
+      'enable verbose output with timing information'
+    ) do
+      @verbose = true
     end
 
     @update_lock_response = nil # Nil means wait, but warn.
