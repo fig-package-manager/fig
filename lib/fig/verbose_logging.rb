@@ -38,22 +38,20 @@ module Fig::VerboseLogging
   def self.time_operation(operation_name, &block)
     return yield unless should_log_verbose?
     
-    start_time = Time.now
+    start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     verbose "starting #{operation_name}"
     
     begin
       result = yield
-      duration = Time.now - start_time
+      duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
       verbose "completed #{operation_name} in #{format_duration(duration)}"
       result
     rescue => error
-      duration = Time.now - start_time
+      duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
       verbose "failed #{operation_name} after #{format_duration(duration)}: #{error.class.name}: #{error.message}"
       raise
     end
   end
-  
-  private
   
   def self.format_duration(seconds)
     if seconds < 1.0

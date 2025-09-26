@@ -157,9 +157,9 @@ describe 'Fig::VerboseLogging' do
       Fig::VerboseLogging.enable_verbose!
       allow(Fig::Logging).to receive(:info?).and_return(true)
       
-      # Mock Time.now to control duration
-      start_time = Time.now
-      allow(Time).to receive(:now).and_return(start_time, start_time + 0.5)
+      # Mock Process.clock_gettime to control duration
+      start_time = 1000.0
+      allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return(start_time, start_time + 0.5)
       
       Fig::VerboseLogging.time_operation('test') { 'result' }
       
