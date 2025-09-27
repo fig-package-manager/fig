@@ -35,6 +35,26 @@ class Fig::Statement::Override < Fig::Statement
     @version = version
   end
 
+  def loaded_but_not_referenced?()
+    return added_to_environment? && ! referenced?
+  end
+
+  def added_to_environment?()
+    return @added_to_environment
+  end
+
+  def added_to_environment(yea_or_nay)
+    @added_to_environment = yea_or_nay
+  end
+
+  def referenced?()
+    return @referenced
+  end
+
+  def referenced(yea_or_nay)
+    @referenced = yea_or_nay
+  end
+
   def statement_type()
     return 'override'
   end

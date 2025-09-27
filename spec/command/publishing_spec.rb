@@ -591,6 +591,18 @@ describe 'Fig' do
         fig(%w<--update-if-missing --include foo/1.2.3 -- hello.bat>)[0].should ==
           'cheese'
       end
+
+      it 'warns on unused override' do
+        input = <<-END
+          config default
+            override unused-package/1.0.0
+            set WHATEVER=SOMETHING
+          end
+        END
+        out, err, exit_code = fig(%w<--update-if-missing>, input)
+
+        err.should =~ /Override "unused-package\/1\.0\.0".*was never used/
+      end
     end
   end
 end

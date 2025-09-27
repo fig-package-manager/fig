@@ -42,6 +42,7 @@ class Fig::RuntimeEnvironment
     @retrieves                    = {}
     @named_packages               = {}
     @working_directory_maintainer = working_directory_maintainer
+    @all_override_statements      = []
   end
 
   # Returns the value of an environment variable
@@ -175,6 +176,7 @@ class Fig::RuntimeEnvironment
       include_file_config(package, statement, backtrace, current_package_depth)
     when Fig::Statement::Override
       backtrace.add_override(statement)
+      @all_override_statements << statement
     end
 
     return
@@ -191,6 +193,15 @@ class Fig::RuntimeEnvironment
         )
         Fig::Logging.warn \
           %Q<The #{name} variable was never referenced or didn't need expansion, so "#{text.strip}"#{statement.position_string} was ignored.>
+      end
+    end
+  end
+
+  def check_for_unused_overrides()
+    @all_override_statements.each do |statement|
+      if statement.loaded_but_not_referenced?
+        Fig::Logging.warn \
+          %Q<Override "#{statement.package_name}/#{statement.version}"#{statement.position_string} was never used.>
       end
     end
   end
