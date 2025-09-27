@@ -145,6 +145,7 @@ class Fig::OperatingSystem
 
   # Returns the basename and full path to the download.
   def download_resource(url, download_directory)
+    log_asset_operation("downloading", url)
     FileUtils.mkdir_p(download_directory)
 
     basename = CGI.unescape Fig::URL.parse(url).path.split('/').last
@@ -156,6 +157,7 @@ class Fig::OperatingSystem
   end
 
   def download_and_unpack_archive(url, download_directory, unpack_directory)
+    log_asset_operation("downloading", url)
     basename, path = download_resource(url, download_directory)
 
     case path
@@ -389,7 +391,6 @@ class Fig::OperatingSystem
 
   private
 
-  
   def log_asset_operation(operation, asset_path, size_bytes = nil)
     message = "asset #{operation}: #{asset_path}"
     message += " (#{format_bytes(size_bytes)})" if size_bytes
