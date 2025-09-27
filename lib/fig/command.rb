@@ -194,6 +194,15 @@ class Fig::Command
     return ! suppressed_warnings.include?('unused retrieve')
   end
 
+  def check_for_unused_overrides?()
+    return false if @options.suppress_warning_unused_override?
+
+    suppressed_warnings = @application_configuration['suppress warnings']
+    return true if not suppressed_warnings
+
+    return ! suppressed_warnings.include?('unused override')
+  end
+
   def configure()
     set_up_update_lock()
 
@@ -346,6 +355,14 @@ class Fig::Command
       Fig::AtExit.add {
         if ! @suppress_further_error_messages
           @environment.check_for_unused_retrieves
+        end
+      }
+    end
+
+    if check_for_unused_overrides?
+      Fig::AtExit.add {
+        if ! @suppress_further_error_messages
+          @environment.check_for_unused_overrides
         end
       }
     end

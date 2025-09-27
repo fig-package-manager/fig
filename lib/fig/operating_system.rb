@@ -381,13 +381,14 @@ class Fig::OperatingSystem
     return
   end
 
-  private
-
   def log_repository_operation(operation, url_or_path, details = nil)
     message = "repository #{operation}: #{url_or_path}"
     message += " (#{details})" if details
     Fig::VerboseLogging.verbose message
   end
+
+  private
+
   
   def log_asset_operation(operation, asset_path, size_bytes = nil)
     message = "asset #{operation}: #{asset_path}"

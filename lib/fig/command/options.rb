@@ -178,6 +178,10 @@ class Fig::Command::Options
     return @suppress_warning_unused_retrieve
   end
 
+  def suppress_warning_unused_override?()
+    return @suppress_warning_unused_override
+  end
+
   private
 
   EXTRA_OPTIONS_DESCRIPTION = <<-'END_DESCRIPTION'
@@ -780,6 +784,13 @@ Running commands:
       %q<don't complain about a retrieve statement that isn't used>
     ) do
       @suppress_warning_unused_retrieve = true
+    end
+
+    @parser.on(
+      '--suppress-warning-unused-override',
+      %q<don't complain about an override statement that isn't used>
+    ) do
+      @suppress_warning_unused_override = true
     end
 
     return

@@ -83,7 +83,7 @@ class Fig::Repository
     Fig::VerboseLogging.time_operation("listing remote packages from #{remote_download_url()}") do
       paths = @operating_system.download_list(remote_download_url())
       filtered_paths = paths.reject { |path| path =~ %r< ^ #{METADATA_SUBDIRECTORY} / >xs }
-      Fig::VerboseLogging.log_repository_operation("found", remote_download_url(), "#{filtered_paths.size} packages")
+      @operating_system.log_repository_operation("found", remote_download_url(), "#{filtered_paths.size} packages")
       filtered_paths
     end
   end
