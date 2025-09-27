@@ -83,7 +83,7 @@ class Fig::Repository
     Fig::VerboseLogging.time_operation("listing remote packages from #{remote_download_url()}") do
       paths = @operating_system.download_list(remote_download_url())
       filtered_paths = paths.reject { |path| path =~ %r< ^ #{METADATA_SUBDIRECTORY} / >xs }
-      @operating_system.log_repository_operation("found", remote_download_url(), "#{filtered_paths.size} packages")
+      Fig::VerboseLogging.verbose "found #{filtered_paths.size} packages at #{remote_download_url()}"
       filtered_paths
     end
   end
@@ -440,7 +440,6 @@ class Fig::Repository
       end
       
       Fig::VerboseLogging.time_operation("downloading and unpacking archive #{File.basename(archive_location)}") do
-        Fig::VerboseLogging.log_asset_operation("downloading", archive_location)
         @operating_system.download_and_unpack_archive(
           archive_location, temporary_package, temporary_runtime
         )
@@ -457,7 +456,6 @@ class Fig::Repository
       end
 
       Fig::VerboseLogging.time_operation("downloading resource #{File.basename(resource_location)}") do
-        Fig::VerboseLogging.log_asset_operation("downloading", resource_location)
         basename, path =
           @operating_system.download_resource(
             resource_location, temporary_package
