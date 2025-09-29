@@ -228,7 +228,10 @@ class Fig::RuntimeEnvironment
     end
 
     apply_config(
-      package, resolved_descriptor.config, new_backtrace, next_package_depth
+      package,
+      resolved_descriptor.config || Fig::Package::DEFAULT_CONFIG,
+      new_backtrace,
+      next_package_depth
     )
 
     return
