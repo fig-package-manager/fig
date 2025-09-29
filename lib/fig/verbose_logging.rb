@@ -12,6 +12,10 @@ module Fig::VerboseLogging
     @@verbose_enabled = true
   end
   
+  def self.disable_verbose!
+    @@verbose_enabled = false
+  end
+  
   def self.verbose_enabled?
     @@verbose_enabled
   end

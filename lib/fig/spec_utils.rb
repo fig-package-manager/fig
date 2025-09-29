@@ -18,6 +18,14 @@ require 'fig/external_program'
 require 'fig/figrc'
 require 'fig/logging'
 require 'fig/repository'
+require 'fig/verbose_logging'
+
+# Reset verbose logging state before each test to prevent test pollution
+RSpec.configure do |config|
+  config.before(:each) do
+    Fig::VerboseLogging.disable_verbose!
+  end
+end
 
 FIG_SPEC_BASE_DIRECTORY = Dir.mktmpdir 'fig-rspec-'
 at_exit { FileUtils.rm_rf FIG_SPEC_BASE_DIRECTORY }
