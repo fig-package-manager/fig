@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    fig (2.0.0.pre.alpha.5)
+    fig (2.0.0.pre.alpha.11)
       artifactory (~> 3.0.17)
       base64 (~> 0.2.0)
       bcrypt_pbkdf (~> 1.1.0)

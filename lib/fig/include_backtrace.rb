@@ -17,6 +17,7 @@ class Fig::IncludeBacktrace
     @parent     = parent
     @descriptor = descriptor
     @overrides  = {}
+    @override_statements = {}  # map package_name -> Statement::Override
   end
 
   def add_override(statement)
@@ -34,14 +35,25 @@ class Fig::IncludeBacktrace
     end
 
     @overrides[package_name] = new_version
+    @override_statements[package_name] = statement
+    statement.added_to_environment(true)
   end
 
   # Returns a version.
   def get_override(package_name, default_version = nil)
     version = @overrides[package_name]
-    return version if version
+    if version
+      statement = @override_statements[package_name]
+      statement.referenced(true) if statement
+      return version
+    end
 
-    return @parent.get_override(package_name, default_version) if @parent
+    if @parent
+      result = @parent.get_override(package_name, default_version)
+      # If parent provided an override, it will mark its own statement as referenced
+      return result
+    end
+    
     return default_version
   end
 
@@ -72,5 +84,18 @@ class Fig::IncludeBacktrace
     end
 
     stack << @descriptor
+  end
+
+  # Collect all override statements from this backtrace level and parents
+  def collect_override_statements(statements = [])
+    if @parent
+      @parent.collect_override_statements(statements)
+    end
+
+    @override_statements.values.each do |statement|
+      statements << statement
+    end
+
+    return statements
   end
 end

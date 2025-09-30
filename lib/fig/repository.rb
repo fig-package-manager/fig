@@ -15,6 +15,7 @@ require 'fig/parser'
 require 'fig/repository_error'
 require 'fig/repository_package_publisher'
 require 'fig/url'
+require 'fig/verbose_logging'
 
 module Fig; end
 
@@ -79,9 +80,12 @@ class Fig::Repository
   def list_remote_packages
     check_remote_repository_format()
 
-    paths = @operating_system.download_list(remote_download_url())
-
-    return paths.reject { |path| path =~ %r< ^ #{METADATA_SUBDIRECTORY} / >xs }
+    Fig::VerboseLogging.time_operation("listing remote packages from #{remote_download_url()}") do
+      paths = @operating_system.download_list(remote_download_url())
+      filtered_paths = paths.reject { |path| path =~ %r< ^ #{METADATA_SUBDIRECTORY} / >xs }
+      Fig::VerboseLogging.verbose "found #{filtered_paths.size} packages at #{remote_download_url()}"
+      filtered_paths
+    end
   end
 
   def get_package(
@@ -296,25 +300,27 @@ class Fig::Repository
   end
 
   def update_package(descriptor)
-    temp_dir = package_download_temp_dir(descriptor)
-    begin
-      install_package(descriptor, temp_dir)
-    rescue Fig::FileNotFoundError => error
-      if @updating_package_definition
-        Fig::Logging.fatal \
-          "Package #{descriptor.to_string} not found in remote repository. (Was looking for #{error.path}.)"
-      else
-        Fig::Logging.fatal \
-          "Part of package #{descriptor.to_string} was not downloadable. (Was attempting to get #{error.path}.)"
+    Fig::VerboseLogging.time_operation("downloading package #{descriptor.to_string}") do
+      temp_dir = package_download_temp_dir(descriptor)
+      begin
+        install_package(descriptor, temp_dir)
+      rescue Fig::FileNotFoundError => error
+        if @updating_package_definition
+          Fig::Logging.fatal \
+            "Package #{descriptor.to_string} not found in remote repository. (Was looking for #{error.path}.)"
+        else
+          Fig::Logging.fatal \
+            "Part of package #{descriptor.to_string} was not downloadable. (Was attempting to get #{error.path}.)"
+        end
+
+        raise Fig::RepositoryError.new
+      rescue StandardError => exception
+        Fig::Logging.fatal %Q<Install of #{descriptor.to_string} failed: #{exception}>
+
+        raise Fig::RepositoryError.new
+      ensure
+        FileUtils.rm_rf(temp_dir)
       end
-
-      raise Fig::RepositoryError.new
-    rescue StandardError => exception
-      Fig::Logging.fatal %Q<Install of #{descriptor.to_string} failed: #{exception}>
-
-      raise Fig::RepositoryError.new
-    ensure
-      FileUtils.rm_rf(temp_dir)
     end
 
     return
@@ -423,6 +429,7 @@ class Fig::Repository
 
   def download_assets(package, descriptor, temporary_package, temporary_runtime)
     remote_package_directory = remote_directory_for_package(descriptor)
+    
     package.archive_locations.each do
       |archive_location|
 
@@ -431,10 +438,14 @@ class Fig::Repository
           remote_package_directory, [archive_location]
         )
       end
-      @operating_system.download_and_unpack_archive(
-        archive_location, temporary_package, temporary_runtime
-      )
+      
+      Fig::VerboseLogging.time_operation("downloading and unpacking archive #{File.basename(archive_location)}") do
+        @operating_system.download_and_unpack_archive(
+          archive_location, temporary_package, temporary_runtime
+        )
+      end
     end
+    
     package.resource_locations.each do
       |resource_location|
 
@@ -444,12 +455,14 @@ class Fig::Repository
         )
       end
 
-      basename, path =
-        @operating_system.download_resource(
-          resource_location, temporary_package
-        )
+      Fig::VerboseLogging.time_operation("downloading resource #{File.basename(resource_location)}") do
+        basename, path =
+          @operating_system.download_resource(
+            resource_location, temporary_package
+          )
 
-      @operating_system.copy path, File.join(temporary_runtime, basename)
+        @operating_system.copy path, File.join(temporary_runtime, basename)
+      end
     end
 
     return

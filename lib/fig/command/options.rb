@@ -79,6 +79,7 @@ class Fig::Command::Options
   attr_reader   :suppress_retrieves
   attr_reader   :update_lock_response
   attr_reader   :variable_to_get
+  attr_reader   :verbose
   attr_accessor :version_message
   attr_accessor :version_plain
 
@@ -175,6 +176,10 @@ class Fig::Command::Options
 
   def suppress_warning_unused_retrieve?()
     return @suppress_warning_unused_retrieve
+  end
+
+  def suppress_warning_unused_override?()
+    return @suppress_warning_unused_override
   end
 
   private
@@ -741,6 +746,13 @@ Running commands:
       @log_level = log_level
     end
 
+    @parser.on(
+      '--verbose',
+      'enable verbose output with timing information'
+    ) do
+      @verbose = true
+    end
+
     @update_lock_response = nil # Nil means wait, but warn.
     update_lock_responses = [:wait, :fail, :ignore]
     response_list = update_lock_responses.join(', ')
@@ -772,6 +784,13 @@ Running commands:
       %q<don't complain about a retrieve statement that isn't used>
     ) do
       @suppress_warning_unused_retrieve = true
+    end
+
+    @parser.on(
+      '--suppress-warning-unused-override',
+      %q<don't complain about an override statement that isn't used>
+    ) do
+      @suppress_warning_unused_override = true
     end
 
     return

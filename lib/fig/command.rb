@@ -22,6 +22,7 @@ require 'fig/runtime_environment'
 require 'fig/statement/configuration'
 require 'fig/update_lock'
 require 'fig/user_input_error'
+require 'fig/verbose_logging'
 require 'fig/working_directory_maintainer'
 
 module Fig; end
@@ -46,6 +47,11 @@ class Fig::Command
     Fig::Logging.initialize_pre_configuration(
       @options.log_to_stdout(), @options.log_level(),
     )
+    
+    # Enable verbose logging if requested
+    if @options.verbose
+      Fig::VerboseLogging.enable_verbose!
+    end
 
     actions = @options.actions()
     if actions.empty?
@@ -186,6 +192,15 @@ class Fig::Command
     return true if not suppressed_warnings
 
     return ! suppressed_warnings.include?('unused retrieve')
+  end
+
+  def check_for_unused_overrides?()
+    return false if @options.suppress_warning_unused_override?
+
+    suppressed_warnings = @application_configuration['suppress warnings']
+    return true if not suppressed_warnings
+
+    return ! suppressed_warnings.include?('unused override')
   end
 
   def configure()
@@ -340,6 +355,14 @@ class Fig::Command
       Fig::AtExit.add {
         if ! @suppress_further_error_messages
           @environment.check_for_unused_retrieves
+        end
+      }
+    end
+
+    if check_for_unused_overrides?
+      Fig::AtExit.add {
+        if ! @suppress_further_error_messages
+          @environment.check_for_unused_overrides
         end
       }
     end

@@ -94,7 +94,7 @@ Standard options (represented as "[...]" above):
 
       [-l | --login]
 
-      [--log-level LEVEL] [--log-config PATH | --log-to-stdout]
+      [--log-level LEVEL] [--log-config PATH | --log-to-stdout] [--verbose]
       [--figrc PATH]      [--no-figrc] [--no-remote-figrc]
 
       [--suppress-vcs-comments-in-published-packages]
