@@ -1,5 +1,5 @@
 # coding: utf-8
 
 module Fig
-  VERSION = '2.0.0-alpha.11'.freeze
+  VERSION = '2.0.0-alpha.12'.freeze
 end
