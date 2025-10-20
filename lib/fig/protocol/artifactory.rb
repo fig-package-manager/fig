@@ -106,8 +106,7 @@ class Fig::Protocol::Artifactory
       file.binmode
 
       begin
-        # TODO seems we should use client_config to do http auth if provided?
-        download_via_http_get(uri.to_s, file)
+        download_via_http_get(uri.to_s, file, client_config)
       rescue SystemCallError => error
         Fig::Logging.debug error.message
         raise Fig::FileNotFoundError.new error.message, uri
@@ -366,14 +365,26 @@ class Fig::Protocol::Artifactory
     end
   end
 
-  # swiped directly from http.rb; if no changes are required, then consider refactoring
-  def download_via_http_get(uri_string, file, redirection_limit = 10)
+  # HTTP download with optional authentication support
+  # If auth_config contains :username and :password, uses HTTP basic auth
+  def download_via_http_get(uri_string, file, auth_config = {}, redirection_limit = 10)
     if redirection_limit < 1
       Fig::Logging.debug 'Too many HTTP redirects.'
       raise Fig::FileNotFoundError.new 'Too many HTTP redirects.', uri_string
     end
 
-    response = Net::HTTP.get_response(URI(uri_string))
+    uri = URI(uri_string)
+    
+    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+      request = Net::HTTP::Get.new(uri.request_uri)
+      
+      # Add HTTP basic auth if credentials provided
+      if auth_config[:username] && auth_config[:password]
+        request.basic_auth(auth_config[:username], auth_config[:password])
+      end
+      
+      http.request(request)
+    end
 
     case response
     when Net::HTTPSuccess then
@@ -381,7 +392,7 @@ class Fig::Protocol::Artifactory
     when Net::HTTPRedirection then
       location = response['location']
       Fig::Logging.debug "Redirecting to #{location}."
-      download_via_http_get(location, file, redirection_limit - 1)
+      download_via_http_get(location, file, auth_config, redirection_limit - 1)
     else
       Fig::Logging.debug "Download failed: #{response.code} #{response.message}."
       raise Fig::FileNotFoundError.new(
