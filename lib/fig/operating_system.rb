@@ -88,7 +88,7 @@ class Fig::OperatingSystem
     @protocols['https'] = Fig::Protocol::HTTP.new
     @protocols['sftp'] = Fig::Protocol::SFTP.new
     @protocols['ssh']  = Fig::Protocol::SSH.new
-    @protocols['art'] = @protocols['artifactory'] = Fig::Protocol::Artifactory.new
+    @protocols['art'] = @protocols['artifactory'] = Fig::Protocol::Artifactory.new login
   end
 
   def list(dir)

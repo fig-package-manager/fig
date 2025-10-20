@@ -32,8 +32,20 @@ class Fig::Protocol::Artifactory
   # Default number of list entries to fetch on initial iteration
   INITIAL_LIST_FETCH_SIZE = 20000
 
-  def initialize
+  def initialize(login)
+    @login = login
     initialize_netrc
+  end
+
+  # like ftp's ftp_login
+  def artifactory_auth(client_config, host, prompt_for_login)
+    if @login
+      auth = get_authentication_for(host, prompt_for_login)
+      if auth
+        client_config[:username] = auth.username
+        client_config[:password] = auth.password
+      end
+    end
   end
 
   # must return a list of strings in the form <package_name>/<version>
@@ -47,12 +59,8 @@ class Fig::Protocol::Artifactory
       parse_uri(uri) => { repo_key:, base_endpoint: }
       
       # Create Artifactory client instance
-      authentication = get_authentication_for(uri.host, :prompt_for_login)
       client_config = { endpoint: base_endpoint }
-      if authentication
-        client_config[:username] = authentication.username
-        client_config[:password] = authentication.password
-      end
+      artifactory_auth(client_config, uri.host, :prompt_for_login)
       client = ::Artifactory::Client.new(client_config)
 
       # Use Artifactory browser API to list directories at repo root
@@ -85,9 +93,11 @@ class Fig::Protocol::Artifactory
     uri = httpify_uri(art_uri)
 
     # Log equivalent curl command for debugging
-    authentication = get_authentication_for(uri.host, prompt_for_login)
-    if authentication
-      Fig::Logging.debug("Equivalent curl: curl -u #{authentication.username}:*** -o '#{path}' '#{uri}'")
+    client_config = { endpoint: art_uri }
+    artifactory_auth(client_config, uri.host, prompt_for_login)
+    
+    if client_config[:username]
+      Fig::Logging.debug("Equivalent curl: curl -u #{client_config[:username]}:*** -o '#{path}' '#{uri}'")
     else
       Fig::Logging.debug("Equivalent curl: curl -o '#{path}' '#{uri}'")
     end
@@ -96,7 +106,7 @@ class Fig::Protocol::Artifactory
       file.binmode
 
       begin
-        download_via_http_get(uri.to_s, file)
+        download_via_http_get(uri.to_s, file, client_config)
       rescue SystemCallError => error
         Fig::Logging.debug error.message
         raise Fig::FileNotFoundError.new error.message, uri
@@ -115,21 +125,17 @@ class Fig::Protocol::Artifactory
     begin
       parse_uri(uri) => { repo_key:, base_endpoint:, target_path: }
 
+      client_config = { endpoint: base_endpoint }
+      artifactory_auth(client_config, uri.host, :prompt_for_login)
+      
       # Configure Artifactory gem globally - unlike other methods that can use client instances,
       # the artifact.upload() method ignores the client: parameter and only uses global config.
       # This is a limitation of the artifactory gem's upload implementation.
-      authentication = get_authentication_for(uri.host, :prompt_for_login)
-      ::Artifactory.configure do |config|
-        config.endpoint = base_endpoint
-        if authentication
-          config.username = authentication.username
-          config.password = authentication.password
-        end
-      end
+      ::Artifactory.configure{ |c| client_config.each{|k,v| c.public_send("#{k}=",v)} } # thx o4!
 
       # Log equivalent curl command for debugging
-      if authentication
-        Fig::Logging.debug("Equivalent curl: curl -u #{authentication.username}:*** -T '#{local_file}' '#{uri}'")
+      if client_config[:username]
+        Fig::Logging.debug("Equivalent curl: curl -u #{client_config[:username]}:*** -T '#{local_file}' '#{uri}'")
       else
         Fig::Logging.debug("Equivalent curl: curl -T '#{local_file}' '#{uri}'")
       end
@@ -163,12 +169,8 @@ class Fig::Protocol::Artifactory
 
 
       # Create Artifactory client instance (same as upload method)
-      authentication = get_authentication_for(uri.host, prompt_for_login)
       client_config = { endpoint: base_endpoint }
-      if authentication
-        client_config[:username] = authentication.username
-        client_config[:password] = authentication.password
-      end
+      artifactory_auth(client_config, uri.host, :prompt_for_login)
       client = ::Artifactory::Client.new(client_config)
       
       # use storage api instead of search - more reliable for virtual repos
@@ -363,14 +365,26 @@ class Fig::Protocol::Artifactory
     end
   end
 
-  # swiped directly from http.rb; if no changes are required, then consider refactoring
-  def download_via_http_get(uri_string, file, redirection_limit = 10)
+  # HTTP download with optional authentication support
+  # If auth_config contains :username and :password, uses HTTP basic auth
+  def download_via_http_get(uri_string, file, auth_config = {}, redirection_limit = 10)
     if redirection_limit < 1
       Fig::Logging.debug 'Too many HTTP redirects.'
       raise Fig::FileNotFoundError.new 'Too many HTTP redirects.', uri_string
     end
 
-    response = Net::HTTP.get_response(URI(uri_string))
+    uri = URI(uri_string)
+    
+    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+      request = Net::HTTP::Get.new(uri.request_uri)
+      
+      # Add HTTP basic auth if credentials provided
+      if auth_config[:username] && auth_config[:password]
+        request.basic_auth(auth_config[:username], auth_config[:password])
+      end
+      
+      http.request(request)
+    end
 
     case response
     when Net::HTTPSuccess then
@@ -378,7 +392,7 @@ class Fig::Protocol::Artifactory
     when Net::HTTPRedirection then
       location = response['location']
       Fig::Logging.debug "Redirecting to #{location}."
-      download_via_http_get(location, file, redirection_limit - 1)
+      download_via_http_get(location, file, auth_config, redirection_limit - 1)
     else
       Fig::Logging.debug "Download failed: #{response.code} #{response.message}."
       raise Fig::FileNotFoundError.new(
