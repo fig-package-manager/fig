@@ -233,18 +233,12 @@ jobs:
           name: fig
           path: pkg/
 
-      - name: Get gem version
-        id: gem-version
-        run: |
-          GEM_VERSION=$(ls pkg/*.gem | sed 's/.*-\([0-9.]\+\)\.gem/\1/')
-          echo "version=${GEM_VERSION}" >> "$GITHUB_OUTPUT"
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: pkg/*.gem
-          name: Release v${{ steps.gem-version.outputs.version }}
-          tag_name: v${{ needs.auto-tag.outputs.version }}
+          name: Release v${{ needs.auto-tag.outputs.new_version }}
+          tag_name: v${{ needs.auto-tag.outputs.new_version }}
           draft: false
           prerelease: false
           generate_release_notes: true
