@@ -136,7 +136,7 @@ class Fig::Protocol::Artifactory
 
       # Log equivalent curl command for debugging
       if client_config[:username]
-        Fig::Logging.debug("Equivalent curl: curl -u #{authentication.username}:*** -T '#{local_file}' '#{uri}'")
+        Fig::Logging.debug("Equivalent curl: curl -u #{client_config[:username]}:*** -T '#{local_file}' '#{uri}'")
       else
         Fig::Logging.debug("Equivalent curl: curl -T '#{local_file}' '#{uri}'")
       end
