@@ -444,6 +444,42 @@ describe Fig::Protocol::Artifactory do
         artifactory.download(uri, path, prompt_for_login)
       end
     end
+
+    context 'HTTP authentication' do
+      let(:artifactory) { Fig::Protocol::Artifactory.new true }
+      let(:mock_http) { double('Net::HTTP') }
+      let(:mock_request) { double('Net::HTTP::Get') }
+      let(:mock_response) { double('Net::HTTPSuccess', body: 'file content') }
+
+      before do
+        allow(artifactory).to receive(:get_authentication_for).and_return(mock_auth)
+        allow(Net::HTTP).to receive(:new).and_return(mock_http)
+        allow(Net::HTTP::Get).to receive(:new).and_return(mock_request)
+        allow(mock_http).to receive(:use_ssl=)
+        allow(mock_http).to receive(:request).and_return(mock_response)
+        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+        allow(mock_response).to receive(:is_a?).with(Net::HTTPRedirection).and_return(false)
+        allow(mock_file).to receive(:write)
+      end
+
+      it 'sends HTTP basic auth headers when credentials are available' do
+        pending "download_via_http_get needs to be updated to support HTTP authentication"
+        
+        expect(mock_request).to receive(:basic_auth).with('testuser', 'testpass')
+        artifactory.download(uri, path, prompt_for_login)
+      end
+
+      it 'successfully downloads when server requires authentication' do
+        pending "download_via_http_get needs to be updated to support HTTP authentication"
+        
+        allow(mock_request).to receive(:basic_auth)
+        expect(mock_http).to receive(:request).with(mock_request).and_return(mock_response)
+        expect(mock_file).to receive(:write).with('file content')
+        
+        result = artifactory.download(uri, path, prompt_for_login)
+        expect(result).to be true
+      end
+    end
   end
 
   describe '#httpify_uri' do
