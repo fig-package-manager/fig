@@ -117,17 +117,20 @@ describe Fig::Protocol::Artifactory do
 
   describe '#download_list' do
     let(:uri) { URI('art://artifacts.example.com/artifactory/repo-name/') }
-    let(:artifactory) { Fig::Protocol::Artifactory.new nil }
     let(:mock_client) { double('Artifactory::Client') }
 
     before do
       allow(::Artifactory::Client).to receive(:new).and_return(mock_client)
-      # Stub netrc authentication
-      allow(artifactory).to receive(:get_authentication_for).and_return(nil)
     end
 
-    context 'when repository has packages and versions' do
-      it 'returns sorted package/version strings' do
+    context 'basic functionality' do
+      let(:artifactory) { Fig::Protocol::Artifactory.new nil }
+      
+      before do
+        allow(artifactory).to receive(:get_authentication_for).and_return(nil)
+      end
+
+      it 'returns sorted package/version strings when repository has packages and versions' do
         # Mock package listing
         packages_response = {
           'data' => [
@@ -175,10 +178,8 @@ describe Fig::Protocol::Artifactory do
           'package-b/0.5.0'
         ])
       end
-    end
 
-    context 'when repository is empty' do
-      it 'returns empty array' do
+      it 'returns empty array when repository is empty' do
         empty_response = {
           'data' => [],
           'continueState' => -1
@@ -191,10 +192,8 @@ describe Fig::Protocol::Artifactory do
         result = artifactory.download_list(uri)
         expect(result).to eq([])
       end
-    end
 
-    context 'when API calls fail' do
-      it 'handles errors gracefully and continues processing' do
+      it 'handles API call errors gracefully and continues processing' do
         packages_response = {
           'data' => [
             { 'name' => 'good-package', 'folder' => true },
@@ -224,10 +223,8 @@ describe Fig::Protocol::Artifactory do
         result = artifactory.download_list(uri)
         expect(result).to eq(['good-package/1.0.0'])
       end
-    end
 
-    context 'with invalid package/version names' do
-      it 'filters out names that do not match COMPONENT_PATTERN' do
+      it 'filters out invalid package/version names that do not match COMPONENT_PATTERN' do
         packages_response = {
           'data' => [
             { 'name' => 'valid-package', 'folder' => true },
@@ -255,6 +252,123 @@ describe Fig::Protocol::Artifactory do
 
         result = artifactory.download_list(uri)
         expect(result).to eq(['valid-package/1.0.0'])
+      end
+    end
+
+    context 'authentication scenarios' do
+      let(:mock_auth) { double('authentication', username: 'testuser', password: 'testpass') }
+      let(:packages_response) { { 'data' => [{ 'name' => 'pkg', 'folder' => true }], 'continueState' => -1 } }
+      let(:versions_response) { { 'data' => [{ 'name' => '1.0', 'folder' => true }], 'continueState' => -1 } }
+
+      before do
+        allow(mock_client).to receive(:get)
+          .with(URI("https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/?recordNum=#{Fig::Protocol::Artifactory::INITIAL_LIST_FETCH_SIZE}"))
+          .and_return(packages_response)
+        allow(mock_client).to receive(:get)
+          .with(URI("https://artifacts.example.com/ui/api/v1/ui/v2/nativeBrowser/repo-name/pkg/?recordNum=#{Fig::Protocol::Artifactory::INITIAL_LIST_FETCH_SIZE}"))
+          .and_return(versions_response)
+      end
+
+      [
+        { login: nil,  auth: nil,        desc: 'without login' },
+        { login: true, auth: :mock_auth, desc: 'with authentication' },
+        { login: true, auth: nil,        desc: 'with login but no authentication found' }
+      ].each do |scenario|
+        context "#{scenario[:desc]}: login=#{scenario[:login]}, auth=#{scenario[:auth] || 'none'}" do
+          let(:artifactory) { Fig::Protocol::Artifactory.new scenario[:login] }
+          let(:auth) { scenario[:auth] == :mock_auth ? mock_auth : nil }
+
+          it 'successfully lists packages regardless of auth state' do
+            allow(artifactory).to receive(:get_authentication_for).and_return(auth)
+            
+            result = artifactory.download_list(uri)
+            expect(result).to eq(['pkg/1.0'])
+          end
+        end
+      end
+    end
+  end
+
+  describe '#path_up_to_date?' do
+    let(:uri) { URI('art://artifacts.example.com/artifactory/repo-name/package/version/file.tar.gz') }
+    let(:local_path) { '/tmp/local_file.tar.gz' }
+    let(:mock_client) { double('Artifactory::Client') }
+    let(:mock_auth) { double('authentication', username: 'testuser', password: 'testpass') }
+    let(:remote_mtime) { Time.parse('2024-01-15 10:00:00 UTC') }
+    let(:local_mtime) { Time.parse('2024-01-15 09:00:00 UTC') }
+    let(:remote_size) { 1024 }
+    let(:local_size) { 1024 }
+
+    before do
+      allow(::Artifactory::Client).to receive(:new).and_return(mock_client)
+      allow(::File).to receive(:size).with(local_path).and_return(local_size)
+      allow(::File).to receive(:mtime).with(local_path).and_return(local_mtime)
+    end
+
+    context 'file up-to-date checks' do
+      let(:artifactory) { Fig::Protocol::Artifactory.new nil }
+      let(:storage_response) { { 'size' => remote_size, 'lastModified' => remote_mtime.iso8601 } }
+
+      before do
+        allow(artifactory).to receive(:get_authentication_for).and_return(nil)
+      end
+
+      it 'returns true when remote file is older or same age and same size' do
+        allow(mock_client).to receive(:get).with('/api/storage/repo-name/package/version/file.tar.gz').and_return(storage_response)
+        
+        result = artifactory.path_up_to_date?(uri, local_path, false)
+        expect(result).to be false # remote is newer
+      end
+
+      it 'returns true when local file is newer or same age and same size' do
+        newer_local = Time.parse('2024-01-15 11:00:00 UTC')
+        allow(::File).to receive(:mtime).with(local_path).and_return(newer_local)
+        allow(mock_client).to receive(:get).with('/api/storage/repo-name/package/version/file.tar.gz').and_return(storage_response)
+        
+        result = artifactory.path_up_to_date?(uri, local_path, false)
+        expect(result).to be true
+      end
+
+      it 'returns false when sizes differ' do
+        allow(::File).to receive(:size).with(local_path).and_return(2048)
+        allow(mock_client).to receive(:get).with('/api/storage/repo-name/package/version/file.tar.gz').and_return(storage_response)
+        
+        result = artifactory.path_up_to_date?(uri, local_path, false)
+        expect(result).to be false
+      end
+
+      it 'returns nil when API call fails' do
+        allow(mock_client).to receive(:get).and_raise(StandardError.new('API error'))
+        
+        result = artifactory.path_up_to_date?(uri, local_path, false)
+        expect(result).to be_nil
+      end
+    end
+
+    context 'authentication scenarios' do
+      let(:storage_response) { { 'size' => remote_size, 'lastModified' => remote_mtime.iso8601 } }
+
+      before do
+        allow(::File).to receive(:mtime).with(local_path).and_return(Time.parse('2024-01-15 11:00:00 UTC'))
+        allow(mock_client).to receive(:get).with('/api/storage/repo-name/package/version/file.tar.gz').and_return(storage_response)
+      end
+
+      [
+        { login: nil,  auth: nil,        desc: 'without login' },
+        { login: true, auth: :mock_auth, desc: 'with authentication' },
+        { login: true, auth: nil,        desc: 'with login but no authentication found' }
+      ].each do |scenario|
+        context "#{scenario[:desc]}: login=#{scenario[:login]}, auth=#{scenario[:auth] || 'none'}" do
+          let(:artifactory) { Fig::Protocol::Artifactory.new scenario[:login] }
+          let(:auth) { scenario[:auth] == :mock_auth ? mock_auth : nil }
+
+          it 'checks file status regardless of auth state' do
+            allow(artifactory).to receive(:get_authentication_for).and_return(auth)
+            
+            result = artifactory.path_up_to_date?(uri, local_path, false)
+            expect(result).to be true
+          end
+        end
       end
     end
   end
