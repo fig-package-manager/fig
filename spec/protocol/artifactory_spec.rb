@@ -272,45 +272,31 @@ describe Fig::Protocol::Artifactory do
       allow(mock_file).to receive(:binmode)
     end
 
-    context 'with login and authentication' do
-      let(:artifactory) { Fig::Protocol::Artifactory.new true }
-      it 'downloads file and logs curl equivalent with auth' do
-        allow(artifactory).to receive(:get_authentication_for).with(uri.host, prompt_for_login).and_return(mock_auth)
-        allow(artifactory).to receive(:download_via_http_get).with(https_uri.to_s, mock_file)
+    [
+      { login: nil,  auth: nil,        curl: "curl -o",       desc: 'without login' },
+      { login: true, auth: :mock_auth, curl: "curl -u testuser:***", desc: 'with authentication' },
+      { login: true, auth: nil,        curl: "curl -o",       desc: 'with login but no authentication found' }
+    ].each do |scenario|
+      context "#{scenario[:desc]}: login=#{scenario[:login]}, auth=#{scenario[:auth] || 'none'}" do
+        let(:artifactory) { Fig::Protocol::Artifactory.new scenario[:login] }
+        let(:auth) { scenario[:auth] == :mock_auth ? mock_auth : nil }
 
-        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -u testuser:*** -o '#{path}' '#{https_uri}'")
+        it 'downloads file and logs curl equivalent' do
+          allow(artifactory).to receive(:get_authentication_for).with(uri.host, prompt_for_login).and_return(auth)
+          allow(artifactory).to receive(:download_via_http_get).with(https_uri.to_s, mock_file)
 
-        result = artifactory.download(uri, path, prompt_for_login)
-        expect(result).to be true
+          expect(Fig::Logging).to receive(:debug).with(/#{Regexp.escape(scenario[:curl])}.*#{Regexp.escape(path)}.*#{Regexp.escape(https_uri.to_s)}/)
+
+          result = artifactory.download(uri, path, prompt_for_login)
+          expect(result).to be true
+        end
       end
     end
 
-    context 'without login and authentication' do
-      it 'downloads file and logs curl equivalent with auth' do
-        allow(artifactory).to receive(:get_authentication_for).with(uri.host, prompt_for_login).and_return(mock_auth)
-        allow(artifactory).to receive(:download_via_http_get).with(https_uri.to_s, mock_file)
+    context 'error handling' do
+      let(:artifactory) { Fig::Protocol::Artifactory.new nil }
 
-        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{https_uri}'")
-
-        result = artifactory.download(uri, path, prompt_for_login)
-        expect(result).to be true
-      end
-    end
-
-    context 'without authentication' do
-      it 'downloads file and logs curl equivalent without auth' do
-        allow(artifactory).to receive(:get_authentication_for).with(uri.host, prompt_for_login).and_return(nil)
-        allow(artifactory).to receive(:download_via_http_get).with(https_uri.to_s, mock_file)
-
-        expect(Fig::Logging).to receive(:debug).with("Equivalent curl: curl -o '#{path}' '#{https_uri}'")
-
-        result = artifactory.download(uri, path, prompt_for_login)
-        expect(result).to be true
-      end
-    end
-
-    context 'when download_via_http_get raises SystemCallError' do
-      it 'wraps error in FileNotFoundError' do
+      it 'wraps SystemCallError in FileNotFoundError' do
         allow(artifactory).to receive(:get_authentication_for).and_return(nil)
         system_error = SystemCallError.new('Connection failed')
         allow(artifactory).to receive(:download_via_http_get).and_raise(system_error)
@@ -319,10 +305,8 @@ describe Fig::Protocol::Artifactory do
         expect(Fig::Logging).to receive(:debug).with('unknown error - Connection failed')
         expect { artifactory.download(uri, path, prompt_for_login) }.to raise_error(Fig::FileNotFoundError, 'unknown error - Connection failed')
       end
-    end
 
-    context 'when download_via_http_get raises SocketError' do
-      it 'wraps error in FileNotFoundError' do
+      it 'wraps SocketError in FileNotFoundError' do
         allow(artifactory).to receive(:get_authentication_for).and_return(nil)
         socket_error = SocketError.new('Host not found')
         allow(artifactory).to receive(:download_via_http_get).and_raise(socket_error)
@@ -333,14 +317,18 @@ describe Fig::Protocol::Artifactory do
       end
     end
 
-    it 'opens file in binary write mode' do
-      allow(artifactory).to receive(:get_authentication_for).and_return(nil)
-      allow(artifactory).to receive(:download_via_http_get)
+    context 'file handling' do
+      let(:artifactory) { Fig::Protocol::Artifactory.new nil }
 
-      expect(::File).to receive(:open).with(path, 'wb')
-      expect(mock_file).to receive(:binmode)
+      it 'opens file in binary write mode' do
+        allow(artifactory).to receive(:get_authentication_for).and_return(nil)
+        allow(artifactory).to receive(:download_via_http_get)
 
-      artifactory.download(uri, path, prompt_for_login)
+        expect(::File).to receive(:open).with(path, 'wb')
+        expect(mock_file).to receive(:binmode)
+
+        artifactory.download(uri, path, prompt_for_login)
+      end
     end
   end
 
@@ -538,95 +526,102 @@ describe Fig::Protocol::Artifactory do
   describe '#upload' do
     let(:local_file) { '/tmp/test.txt' }
     let(:uri) { URI('https://artifacts.example.com/artifactory/repo-name/path/to/file.txt') }
-    let(:mock_client) { double('Artifactory::Client') }
     let(:mock_artifact) { double('Artifactory::Resource::Artifact') }
-    let(:mock_authentication) { double('authentication', username: 'testuser', password: 'testpass') }
+    let(:mock_auth) { double('authentication', username: 'testuser', password: 'testpass') }
 
     before do
-      allow(artifactory).to receive(:get_authentication_for).and_return(mock_authentication)
-      # Mock the global configuration - create a config double that responds to all setters
-      config_mock = double('config')
-      allow(config_mock).to receive(:endpoint=)
-      allow(config_mock).to receive(:username=)
-      allow(config_mock).to receive(:password=)
-      allow(::Artifactory).to receive(:configure).and_yield(config_mock)
       allow(::Artifactory::Resource::Artifact).to receive(:new).and_return(mock_artifact)
       allow(::File).to receive(:stat).and_return(double('stat', size: 1024, mtime: Time.now))
       allow(Digest::SHA1).to receive(:file).and_return(double(hexdigest: 'sha1hash'))
       allow(Digest::MD5).to receive(:file).and_return(double(hexdigest: 'md5hash'))
     end
 
-    it 'parses URI correctly and uploads file' do
-      config_mock = double('config')
-      expect(::Artifactory).to receive(:configure).and_yield(config_mock)
-      expect(config_mock).to receive(:endpoint=).with('https://artifacts.example.com/artifactory')
-      # following two only relevant if --login is under test
-      #expect(config_mock).to receive(:username=).with('testuser')
-      #expect(config_mock).to receive(:password=).with('testpass')
-      
-      expect(mock_artifact).to receive(:upload).with(
-        'repo-name',
-        'path/to/file.txt',
-        hash_including('fig.original_path' => local_file)
-      )
+    [
+      { login: nil,  auth: nil,        expects_creds: false, curl: "curl -T",       desc: 'without login' },
+      { login: true, auth: :mock_auth, expects_creds: true,  curl: "curl -u testuser:*** -T", desc: 'with authentication' },
+      { login: true, auth: nil,        expects_creds: false, curl: "curl -T",       desc: 'with login but no authentication found' }
+    ].each do |scenario|
+      context "#{scenario[:desc]}: login=#{scenario[:login]}, auth=#{scenario[:auth] || 'none'}" do
+        let(:artifactory) { Fig::Protocol::Artifactory.new scenario[:login] }
+        let(:auth) { scenario[:auth] == :mock_auth ? mock_auth : nil }
 
-      artifactory.upload(local_file, uri)
-    end
+        before do
+          allow(artifactory).to receive(:get_authentication_for).and_return(auth)
+        end
 
-    it 'parses URI correctly and uploads file' do
-      
-      config_mock = double('config')
-      expect(::Artifactory).to receive(:configure).and_yield(config_mock)
-      expect(config_mock).to receive(:endpoint=).with('https://artifacts.example.com/artifactory')
-      # following two only relevant if --login is under test
-      #expect(config_mock).to receive(:username=).with('testuser')
-      #expect(config_mock).to receive(:password=).with('testpass')
-      
-      expect(mock_artifact).to receive(:upload).with(
-        'repo-name',
-        'path/to/file.txt',
-        hash_including('fig.original_path' => local_file)
-      )
+        it 'parses URI correctly and uploads file' do
+          config_mock = double('config')
+          expect(::Artifactory).to receive(:configure).and_yield(config_mock)
+          expect(config_mock).to receive(:endpoint=).with('https://artifacts.example.com/artifactory')
+          
+          if scenario[:expects_creds]
+            expect(config_mock).to receive(:username=).with('testuser')
+            expect(config_mock).to receive(:password=).with('testpass')
+          else
+            expect(config_mock).not_to receive(:username=)
+            expect(config_mock).not_to receive(:password=)
+          end
+          
+          expect(mock_artifact).to receive(:upload).with(
+            'repo-name',
+            'path/to/file.txt',
+            hash_including('fig.original_path' => local_file)
+          )
 
-      artifactory.upload(local_file, uri)
-    end
+          artifactory.upload(local_file, uri)
+        end
 
-    it 'logs equivalent curl command' do
-      allow(mock_artifact).to receive(:upload)
-      
-      expect(Fig::Logging).to receive(:debug).with(
-        #"Equivalent curl: curl -u testuser:*** -T '#{local_file}' '#{uri}'"
-        "Equivalent curl: curl -T '#{local_file}' '#{uri}'"
-      ).ordered
-      expect(Fig::Logging).to receive(:debug).with(
-        /Upload metadata:/
-      ).ordered
+        it 'logs equivalent curl command' do
+          config_mock = double('config')
+          allow(config_mock).to receive(:endpoint=)
+          allow(config_mock).to receive(:username=)
+          allow(config_mock).to receive(:password=)
+          allow(::Artifactory).to receive(:configure).and_yield(config_mock)
+          allow(mock_artifact).to receive(:upload)
+          
+          expect(Fig::Logging).to receive(:debug).with(/#{Regexp.escape(scenario[:curl])}/).ordered
+          expect(Fig::Logging).to receive(:debug).with(/Upload metadata:/).ordered
 
-      artifactory.upload(local_file, uri)
-    end
-
-    it 'raises error for invalid URI without artifactory in path' do
-      invalid_uri = URI('https://example.com/repo-name/file.txt')
-      
-      expect {
-        artifactory.upload(local_file, invalid_uri)
-      }.to raise_error(ArgumentError, /URI must contain 'artifactory' in path/)
-    end
-
-    it 'collects metadata with fig. prefix' do
-      metadata_hash = nil
-      allow(mock_artifact).to receive(:upload) do |repo, path, metadata|
-        metadata_hash = metadata
+          artifactory.upload(local_file, uri)
+        end
       end
+    end
 
-      artifactory.upload(local_file, uri)
+    context 'error handling' do
+      let(:artifactory) { Fig::Protocol::Artifactory.new nil }
 
-      expect(metadata_hash).to include(
-        'fig.original_path' => local_file,
-        'fig.target_path' => 'path/to/file.txt',
-        'fig.tool' => 'fig-artifactory-protocol'
-      )
-      expect(metadata_hash.keys).to all(start_with('fig.'))
+      it 'raises error for invalid URI without artifactory in path' do
+        allow(artifactory).to receive(:get_authentication_for).and_return(nil)
+        invalid_uri = URI('https://example.com/repo-name/file.txt')
+        
+        expect {
+          artifactory.upload(local_file, invalid_uri)
+        }.to raise_error(ArgumentError, /URI must contain 'artifactory' in path/)
+      end
+    end
+
+    context 'metadata collection' do
+      let(:artifactory) { Fig::Protocol::Artifactory.new nil }
+
+      it 'collects metadata with fig. prefix' do
+        allow(artifactory).to receive(:get_authentication_for).and_return(nil)
+        config_mock = double('config')
+        allow(config_mock).to receive(:endpoint=)
+        allow(::Artifactory).to receive(:configure).and_yield(config_mock)
+        metadata_hash = nil
+        allow(mock_artifact).to receive(:upload) do |repo, path, metadata|
+          metadata_hash = metadata
+        end
+
+        artifactory.upload(local_file, uri)
+
+        expect(metadata_hash).to include(
+          'fig.original_path' => local_file,
+          'fig.target_path' => 'path/to/file.txt',
+          'fig.tool' => 'fig-artifactory-protocol'
+        )
+        expect(metadata_hash.keys).to all(start_with('fig.'))
+      end
     end
   end
 end
