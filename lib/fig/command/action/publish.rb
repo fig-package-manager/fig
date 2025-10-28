@@ -30,7 +30,7 @@ class Fig::Command::Action::Publish
 
     package_description =
       Fig::PackageDescriptor.format(@descriptor.name, @descriptor.version, nil)
-    if @execution_context.repository.list_remote_packages.include?(
+    if @execution_context.repository.list_remote_packages(:upload).include?(
       package_description
     )
       Fig::Logging.info "#{@descriptor.to_string()} has already been published."

@@ -77,13 +77,19 @@ class Fig::Repository
     return results
   end
 
-  def list_remote_packages
+  def list_remote_packages(url = :download)
+    actual =
+      case url
+      when :download then remote_download_url
+      when :upload   then remote_upload_url
+      else                url
+      end
     check_remote_repository_format()
 
-    Fig::VerboseLogging.time_operation("listing remote packages from #{remote_download_url()}") do
-      paths = @operating_system.download_list(remote_download_url())
+    Fig::VerboseLogging.time_operation("listing remote packages from #{actual}") do
+      paths = @operating_system.download_list(actual)
       filtered_paths = paths.reject { |path| path =~ %r< ^ #{METADATA_SUBDIRECTORY} / >xs }
-      Fig::VerboseLogging.verbose "found #{filtered_paths.size} packages at #{remote_download_url()}"
+      Fig::VerboseLogging.verbose "found #{filtered_paths.size} packages at #{actual}"
       filtered_paths
     end
   end
